@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -21,11 +22,9 @@ func NewDashboardCommand() *cobra.Command {
 		Use:   "dashboard",
 		Short: "Starts Argo CD Web UI locally",
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx := cmd.Context()
-
-			errors.CheckError(headless.StartLocalServer(ctx, &argocdclient.ClientOptions{Core: true}, initialize.RetrieveContextIfChanged(cmd.Flag("context")), &port, &address))
+			errors.CheckError(headless.StartLocalServer(&argocdclient.ClientOptions{Core: true}, initialize.RetrieveContextIfChanged(cmd.Flag("context")), &port, &address))
 			println(fmt.Sprintf("Argo CD UI is available at http://%s:%d", address, port))
-			<-ctx.Done()
+			<-context.Background().Done()
 		},
 	}
 	initialize.InitCommand(cmd)

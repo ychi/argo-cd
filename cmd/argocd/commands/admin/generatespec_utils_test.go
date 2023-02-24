@@ -3,6 +3,7 @@ package admin
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -23,17 +24,19 @@ func TestGetOutWriter_InlineOff(t *testing.T) {
 }
 
 func TestGetOutWriter_InlineOn(t *testing.T) {
-	tmpFile := t.TempDir()
+	tmpFile, err := ioutil.TempFile("", "")
+	require.NoError(t, err)
 	defer func() {
-		_ = os.Remove(fmt.Sprintf("%s.back", tmpFile))
+		_ = os.Remove(tmpFile.Name())
+		_ = os.Remove(fmt.Sprintf("%s.back", tmpFile.Name()))
 	}()
 
-	out, closer, err := getOutWriter(true, tmpFile)
+	out, closer, err := getOutWriter(true, tmpFile.Name())
 	require.NoError(t, err)
 	defer io.Close(closer)
 
-	assert.Equal(t, tmpFile, out.(*os.File).Name())
-	_, err = os.Stat(fmt.Sprintf("%s.back", tmpFile))
+	assert.Equal(t, tmpFile.Name(), out.(*os.File).Name())
+	_, err = os.Stat(fmt.Sprintf("%s.back", tmpFile.Name()))
 	assert.NoError(t, err, "Back file must be created")
 }
 
