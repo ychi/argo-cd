@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -49,7 +50,7 @@ func NewContextCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
 			prevCtxFile := path.Join(argoCDDir, ".prev-ctx")
 
 			if ctxName == "-" {
-				prevCtxBytes, err := os.ReadFile(prevCtxFile)
+				prevCtxBytes, err := ioutil.ReadFile(prevCtxFile)
 				errors.CheckError(err)
 				ctxName = string(prevCtxBytes)
 			}
@@ -65,7 +66,7 @@ func NewContextCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
 
 			err = localconfig.WriteLocalConfig(*localCfg, clientOpts.ConfigPath)
 			errors.CheckError(err)
-			err = os.WriteFile(prevCtxFile, []byte(prevCtx), 0644)
+			err = ioutil.WriteFile(prevCtxFile, []byte(prevCtx), 0644)
 			errors.CheckError(err)
 			fmt.Printf("Switched to context '%s'\n", localCfg.CurrentContext)
 		},
