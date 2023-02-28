@@ -5,7 +5,7 @@ import (
 
 	"github.com/argoproj/argo-cd/v2/util/argo"
 
-	"context"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

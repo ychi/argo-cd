@@ -11,10 +11,10 @@ argocd admin notifications template notify NAME RESOURCE_NAME [flags]
 ```
 
 # Trigger notification using in-cluster config map and secret
-argocd admin notifications template notify app-sync-succeeded guestbook --recipient slack:my-slack-channel
+notifications template notify app-sync-succeeded guestbook --recipient slack:my-slack-channel
 
 # Render notification render generated notification in console
-argocd admin notifications template notify app-sync-succeeded guestbook
+notifications template notify app-sync-succeeded guestbook
 
 ```
 
@@ -60,7 +60,6 @@ argocd admin notifications template notify app-sync-succeeded guestbook
       --plaintext                       Disable TLS
       --port-forward                    Connect to a random argocd-server port using port forwarding
       --port-forward-namespace string   Namespace name which should be used for port forwarding
-      --proxy-url string                If provided, this URL will be used to connect via proxy
       --request-timeout string          The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
       --secret string                   argocd-notifications-secret.yaml file path. Use empty secret if provided value is ':empty'
       --server string                   The address and port of the Kubernetes API server
