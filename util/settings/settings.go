@@ -1168,12 +1168,8 @@ func (mgr *SettingsManager) GetHelp() (*Help, error) {
 	if !ok {
 		chatText = "Chat now!"
 	}
-	chatURL, ok := argoCDCM.Data[helpChatURL]
-	if !ok {
-		chatText = ""
-	}
 	return &Help{
-		ChatURL:    chatURL,
+		ChatURL:    argoCDCM.Data[helpChatURL],
 		ChatText:   chatText,
 		BinaryURLs: getDownloadBinaryUrlsFromConfigMap(argoCDCM),
 	}, nil
