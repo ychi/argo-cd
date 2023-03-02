@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/argoproj/argo-cd/v2/applicationset/generators"
-	argov1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
@@ -17,13 +15,16 @@ import (
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	"github.com/argoproj/argo-cd/v2/applicationset/generators"
+	argoappsetv1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/applicationset/v1alpha1"
 )
 
 func TestRequeueAfter(t *testing.T) {
 	mockServer := argoCDServiceMock{}
 	ctx := context.Background()
 	scheme := runtime.NewScheme()
-	err := argov1alpha1.AddToScheme(scheme)
+	err := argoappsetv1alpha1.AddToScheme(scheme)
 	assert.Nil(t, err)
 	gvrToListKind := map[schema.GroupVersionResource]string{{
 		Group:    "mallard.io",
@@ -59,9 +60,9 @@ func TestRequeueAfter(t *testing.T) {
 		"List":                    generators.NewListGenerator(),
 		"Clusters":                generators.NewClusterGenerator(k8sClient, ctx, appClientset, "argocd"),
 		"Git":                     generators.NewGitGenerator(mockServer),
-		"SCMProvider":             generators.NewSCMProviderGenerator(fake.NewClientBuilder().WithObjects(&corev1.Secret{}).Build(), generators.SCMAuthProviders{}),
+		"SCMProvider":             generators.NewSCMProviderGenerator(fake.NewClientBuilder().WithObjects(&corev1.Secret{}).Build()),
 		"ClusterDecisionResource": generators.NewDuckTypeGenerator(ctx, fakeDynClient, appClientset, "argocd"),
-		"PullRequest":             generators.NewPullRequestGenerator(k8sClient, generators.SCMAuthProviders{}),
+		"PullRequest":             generators.NewPullRequestGenerator(k8sClient),
 	}
 
 	nestedGenerators := map[string]generators.Generator{
@@ -95,7 +96,7 @@ func TestRequeueAfter(t *testing.T) {
 	}
 
 	type args struct {
-		appset *argov1alpha1.ApplicationSet
+		appset *argoappsetv1alpha1.ApplicationSet
 	}
 	tests := []struct {
 		name    string
@@ -103,44 +104,44 @@ func TestRequeueAfter(t *testing.T) {
 		want    time.Duration
 		wantErr assert.ErrorAssertionFunc
 	}{
-		{name: "Cluster", args: args{appset: &argov1alpha1.ApplicationSet{
-			Spec: argov1alpha1.ApplicationSetSpec{
-				Generators: []argov1alpha1.ApplicationSetGenerator{{Clusters: &argov1alpha1.ClusterGenerator{}}},
+		{name: "Cluster", args: args{appset: &argoappsetv1alpha1.ApplicationSet{
+			Spec: argoappsetv1alpha1.ApplicationSetSpec{
+				Generators: []argoappsetv1alpha1.ApplicationSetGenerator{{Clusters: &argoappsetv1alpha1.ClusterGenerator{}}},
 			},
 		}}, want: generators.NoRequeueAfter, wantErr: assert.NoError},
-		{name: "ClusterMergeNested", args: args{&argov1alpha1.ApplicationSet{
-			Spec: argov1alpha1.ApplicationSetSpec{
-				Generators: []argov1alpha1.ApplicationSetGenerator{
-					{Clusters: &argov1alpha1.ClusterGenerator{}},
-					{Merge: &argov1alpha1.MergeGenerator{
-						Generators: []argov1alpha1.ApplicationSetNestedGenerator{
+		{name: "ClusterMergeNested", args: args{&argoappsetv1alpha1.ApplicationSet{
+			Spec: argoappsetv1alpha1.ApplicationSetSpec{
+				Generators: []argoappsetv1alpha1.ApplicationSetGenerator{
+					{Clusters: &argoappsetv1alpha1.ClusterGenerator{}},
+					{Merge: &argoappsetv1alpha1.MergeGenerator{
+						Generators: []argoappsetv1alpha1.ApplicationSetNestedGenerator{
 							{
-								Clusters: &argov1alpha1.ClusterGenerator{},
-								Git:      &argov1alpha1.GitGenerator{},
+								Clusters: &argoappsetv1alpha1.ClusterGenerator{},
+								Git:      &argoappsetv1alpha1.GitGenerator{},
 							},
 						},
 					}},
 				},
 			},
 		}}, want: generators.DefaultRequeueAfterSeconds, wantErr: assert.NoError},
-		{name: "ClusterMatrixNested", args: args{&argov1alpha1.ApplicationSet{
-			Spec: argov1alpha1.ApplicationSetSpec{
-				Generators: []argov1alpha1.ApplicationSetGenerator{
-					{Clusters: &argov1alpha1.ClusterGenerator{}},
-					{Matrix: &argov1alpha1.MatrixGenerator{
-						Generators: []argov1alpha1.ApplicationSetNestedGenerator{
+		{name: "ClusterMatrixNested", args: args{&argoappsetv1alpha1.ApplicationSet{
+			Spec: argoappsetv1alpha1.ApplicationSetSpec{
+				Generators: []argoappsetv1alpha1.ApplicationSetGenerator{
+					{Clusters: &argoappsetv1alpha1.ClusterGenerator{}},
+					{Matrix: &argoappsetv1alpha1.MatrixGenerator{
+						Generators: []argoappsetv1alpha1.ApplicationSetNestedGenerator{
 							{
-								Clusters: &argov1alpha1.ClusterGenerator{},
-								Git:      &argov1alpha1.GitGenerator{},
+								Clusters: &argoappsetv1alpha1.ClusterGenerator{},
+								Git:      &argoappsetv1alpha1.GitGenerator{},
 							},
 						},
 					}},
 				},
 			},
 		}}, want: generators.DefaultRequeueAfterSeconds, wantErr: assert.NoError},
-		{name: "ListGenerator", args: args{appset: &argov1alpha1.ApplicationSet{
-			Spec: argov1alpha1.ApplicationSetSpec{
-				Generators: []argov1alpha1.ApplicationSetGenerator{{List: &argov1alpha1.ListGenerator{}}},
+		{name: "ListGenerator", args: args{appset: &argoappsetv1alpha1.ApplicationSet{
+			Spec: argoappsetv1alpha1.ApplicationSetSpec{
+				Generators: []argoappsetv1alpha1.ApplicationSetGenerator{{List: &argoappsetv1alpha1.ListGenerator{}}},
 			},
 		}}, want: generators.NoRequeueAfter, wantErr: assert.NoError},
 	}

@@ -17,7 +17,7 @@ import (
 )
 
 // NewVersionCmd returns a new `version` command to be used as a sub-command to root
-func NewVersionCmd(clientOpts *argocdclient.ClientOptions, serverVersion *version.VersionMessage) *cobra.Command {
+func NewVersionCmd(clientOpts *argocdclient.ClientOptions) *cobra.Command {
 	var (
 		short  bool
 		client bool
@@ -40,8 +40,6 @@ func NewVersionCmd(clientOpts *argocdclient.ClientOptions, serverVersion *versio
   argocd version --short -o yaml
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			ctx := cmd.Context()
-
 			cv := common.GetVersion()
 			switch output {
 			case "yaml", "json":
@@ -54,12 +52,7 @@ func NewVersionCmd(clientOpts *argocdclient.ClientOptions, serverVersion *versio
 				}
 
 				if !client {
-					var sv *version.VersionMessage
-					if serverVersion == nil {
-						sv = getServerVersion(ctx, clientOpts, cmd)
-					} else {
-						sv = serverVersion
-					}
+					sv := getServerVersion(clientOpts, cmd)
 
 					if short {
 						v["server"] = map[string]string{"argocd-server": sv.Version}
@@ -71,15 +64,11 @@ func NewVersionCmd(clientOpts *argocdclient.ClientOptions, serverVersion *versio
 				err := PrintResource(v, output)
 				errors.CheckError(err)
 			case "wide", "short", "":
-				fmt.Fprint(cmd.OutOrStdout(), printClientVersion(&cv, short || (output == "short")))
+				printClientVersion(&cv, short || (output == "short"))
+
 				if !client {
-					var sv *version.VersionMessage
-					if serverVersion == nil {
-						sv = getServerVersion(ctx, clientOpts, cmd)
-					} else {
-						sv = serverVersion
-					}
-					fmt.Fprint(cmd.OutOrStdout(), printServerVersion(sv, short || (output == "short")))
+					sv := getServerVersion(clientOpts, cmd)
+					printServerVersion(sv, short || (output == "short"))
 				}
 			default:
 				log.Fatalf("unknown output format: %s", output)
@@ -92,72 +81,72 @@ func NewVersionCmd(clientOpts *argocdclient.ClientOptions, serverVersion *versio
 	return &versionCmd
 }
 
-func getServerVersion(ctx context.Context, options *argocdclient.ClientOptions, c *cobra.Command) *version.VersionMessage {
+func getServerVersion(options *argocdclient.ClientOptions, c *cobra.Command) *version.VersionMessage {
 	conn, versionIf := headless.NewClientOrDie(options, c).NewVersionClientOrDie()
 	defer argoio.Close(conn)
 
-	v, err := versionIf.Version(ctx, &empty.Empty{})
+	v, err := versionIf.Version(context.Background(), &empty.Empty{})
 	errors.CheckError(err)
 
 	return v
 }
 
-func printClientVersion(version *common.Version, short bool) string {
-	output := fmt.Sprintf("%s: %s\n", cliName, version)
+func printClientVersion(version *common.Version, short bool) {
+	fmt.Printf("%s: %s\n", cliName, version)
+
 	if short {
-		return output
+		return
 	}
-	output += fmt.Sprintf("  BuildDate: %s\n", version.BuildDate)
-	output += fmt.Sprintf("  GitCommit: %s\n", version.GitCommit)
-	output += fmt.Sprintf("  GitTreeState: %s\n", version.GitTreeState)
+
+	fmt.Printf("  BuildDate: %s\n", version.BuildDate)
+	fmt.Printf("  GitCommit: %s\n", version.GitCommit)
+	fmt.Printf("  GitTreeState: %s\n", version.GitTreeState)
 	if version.GitTag != "" {
-		output += fmt.Sprintf("  GitTag: %s\n", version.GitTag)
+		fmt.Printf("  GitTag: %s\n", version.GitTag)
 	}
-	output += fmt.Sprintf("  GoVersion: %s\n", version.GoVersion)
-	output += fmt.Sprintf("  Compiler: %s\n", version.Compiler)
-	output += fmt.Sprintf("  Platform: %s\n", version.Platform)
-	return output
+	fmt.Printf("  GoVersion: %s\n", version.GoVersion)
+	fmt.Printf("  Compiler: %s\n", version.Compiler)
+	fmt.Printf("  Platform: %s\n", version.Platform)
 }
 
-func printServerVersion(version *version.VersionMessage, short bool) string {
-	output := fmt.Sprintf("%s: %s\n", "argocd-server", version.Version)
+func printServerVersion(version *version.VersionMessage, short bool) {
+	fmt.Printf("%s: %s\n", "argocd-server", version.Version)
 
 	if short {
-		return output
+		return
 	}
 
 	if version.BuildDate != "" {
-		output += fmt.Sprintf("  BuildDate: %s\n", version.BuildDate)
+		fmt.Printf("  BuildDate: %s\n", version.BuildDate)
 	}
 	if version.GitCommit != "" {
-		output += fmt.Sprintf("  GitCommit: %s\n", version.GitCommit)
+		fmt.Printf("  GitCommit: %s\n", version.GitCommit)
 	}
 	if version.GitTreeState != "" {
-		output += fmt.Sprintf("  GitTreeState: %s\n", version.GitTreeState)
+		fmt.Printf("  GitTreeState: %s\n", version.GitTreeState)
 	}
 	if version.GitTag != "" {
-		output += fmt.Sprintf("  GitTag: %s\n", version.GitTag)
+		fmt.Printf("  GitTag: %s\n", version.GitTag)
 	}
 	if version.GoVersion != "" {
-		output += fmt.Sprintf("  GoVersion: %s\n", version.GoVersion)
+		fmt.Printf("  GoVersion: %s\n", version.GoVersion)
 	}
 	if version.Compiler != "" {
-		output += fmt.Sprintf("  Compiler: %s\n", version.Compiler)
+		fmt.Printf("  Compiler: %s\n", version.Compiler)
 	}
 	if version.Platform != "" {
-		output += fmt.Sprintf("  Platform: %s\n", version.Platform)
+		fmt.Printf("  Platform: %s\n", version.Platform)
 	}
 	if version.KustomizeVersion != "" {
-		output += fmt.Sprintf("  Kustomize Version: %s\n", version.KustomizeVersion)
+		fmt.Printf("  Kustomize Version: %s\n", version.KustomizeVersion)
 	}
 	if version.HelmVersion != "" {
-		output += fmt.Sprintf("  Helm Version: %s\n", version.HelmVersion)
+		fmt.Printf("  Helm Version: %s\n", version.HelmVersion)
 	}
 	if version.KubectlVersion != "" {
-		output += fmt.Sprintf("  Kubectl Version: %s\n", version.KubectlVersion)
+		fmt.Printf("  Kubectl Version: %s\n", version.KubectlVersion)
 	}
 	if version.JsonnetVersion != "" {
-		output += fmt.Sprintf("  Jsonnet Version: %s\n", version.JsonnetVersion)
+		fmt.Printf("  Jsonnet Version: %s\n", version.JsonnetVersion)
 	}
-	return output
 }

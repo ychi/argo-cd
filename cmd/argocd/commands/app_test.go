@@ -6,16 +6,20 @@ import (
 	"testing"
 	"time"
 
-	argocdclient "github.com/argoproj/argo-cd/v2/pkg/apiclient"
-	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	argoappv1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	"github.com/argoproj/gitops-engine/pkg/health"
 	"github.com/argoproj/gitops-engine/pkg/utils/kube"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/argoproj/gitops-engine/pkg/health"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	argocdclient "github.com/argoproj/argo-cd/v2/pkg/apiclient"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 )
 
 func Test_getInfos(t *testing.T) {
@@ -260,6 +264,63 @@ func TestFindRevisionHistoryWithPassedIdThatNotExist(t *testing.T) {
 
 }
 
+func TestFilterResources(t *testing.T) {
+
+	t.Run("Filter by ns", func(t *testing.T) {
+
+		resources := []*v1alpha1.ResourceDiff{
+			{
+				LiveState: "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"name\":\"test-helm-guestbook\",\"namespace\":\"argocd\"},\"spec\":{\"selector\":{\"app\":\"helm-guestbook\",\"release\":\"test\"},\"sessionAffinity\":\"None\",\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}",
+			},
+			{
+				LiveState: "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"name\":\"test-helm-guestbook\",\"namespace\":\"ns\"},\"spec\":{\"selector\":{\"app\":\"helm-guestbook\",\"release\":\"test\"},\"sessionAffinity\":\"None\",\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}",
+			},
+		}
+
+		filteredResources := filterResources(false, resources, "g", "Service", "ns", "test-helm-guestbook", true)
+		if len(filteredResources) != 1 {
+			t.Fatal("Incorrect number of resources after filter")
+		}
+
+	})
+
+	t.Run("Filter by kind", func(t *testing.T) {
+
+		resources := []*v1alpha1.ResourceDiff{
+			{
+				LiveState: "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"name\":\"test-helm-guestbook\",\"namespace\":\"argocd\"},\"spec\":{\"selector\":{\"app\":\"helm-guestbook\",\"release\":\"test\"},\"sessionAffinity\":\"None\",\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}",
+			},
+			{
+				LiveState: "{\"apiVersion\":\"v1\",\"kind\":\"Deployment\",\"metadata\":{\"name\":\"test-helm-guestbook\",\"namespace\":\"argocd\"},\"spec\":{\"selector\":{\"app\":\"helm-guestbook\",\"release\":\"test\"},\"sessionAffinity\":\"None\",\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}",
+			},
+		}
+
+		filteredResources := filterResources(false, resources, "g", "Deployment", "argocd", "test-helm-guestbook", true)
+		if len(filteredResources) != 1 {
+			t.Fatal("Incorrect number of resources after filter")
+		}
+
+	})
+
+	t.Run("Filter by name", func(t *testing.T) {
+
+		resources := []*v1alpha1.ResourceDiff{
+			{
+				LiveState: "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"name\":\"test-helm-guestbook\",\"namespace\":\"argocd\"},\"spec\":{\"selector\":{\"app\":\"helm-guestbook\",\"release\":\"test\"},\"sessionAffinity\":\"None\",\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}",
+			},
+			{
+				LiveState: "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"name\":\"test-helm\",\"namespace\":\"argocd\"},\"spec\":{\"selector\":{\"app\":\"helm-guestbook\",\"release\":\"test\"},\"sessionAffinity\":\"None\",\"type\":\"ClusterIP\"},\"status\":{\"loadBalancer\":{}}}",
+			},
+		}
+
+		filteredResources := filterResources(false, resources, "g", "Service", "argocd", "test-helm", true)
+		if len(filteredResources) != 1 {
+			t.Fatal("Incorrect number of resources after filter")
+		}
+
+	})
+}
+
 func Test_groupObjsByKey(t *testing.T) {
 	localObjs := []*unstructured.Unstructured{
 		{
@@ -498,7 +559,7 @@ func TestPrintAppSummaryTable(t *testing.T) {
 				},
 				Project:     "default",
 				Destination: v1alpha1.ApplicationDestination{Server: "local", Namespace: "argocd"},
-				Source: &v1alpha1.ApplicationSource{
+				Source: v1alpha1.ApplicationSource{
 					RepoURL:        "test",
 					TargetRevision: "master",
 					Path:           "/test",
@@ -552,7 +613,7 @@ func TestPrintAppSummaryTable(t *testing.T) {
 		return nil
 	})
 
-	expectation := `Name:               argocd/test
+	expectation := `Name:               test
 Project:            default
 Server:             local
 Namespace:          argocd
@@ -604,7 +665,7 @@ func TestPrintParams(t *testing.T) {
 	output, _ := captureOutput(func() error {
 		app := &v1alpha1.Application{
 			Spec: v1alpha1.ApplicationSpec{
-				Source: &v1alpha1.ApplicationSource{
+				Source: v1alpha1.ApplicationSource{
 					Helm: &v1alpha1.ApplicationSourceHelm{
 						Parameters: []v1alpha1.HelmParameter{
 							{
@@ -904,220 +965,11 @@ func Test_unset_nothingToUnset(t *testing.T) {
 	}
 }
 
-func TestFilterAppResources(t *testing.T) {
-	// App resources
-	var (
-		appReplicaSet1 = v1alpha1.ResourceStatus{
-			Group:     "apps",
-			Kind:      "ReplicaSet",
-			Namespace: "default",
-			Name:      "replicaSet-name1",
-		}
-		appReplicaSet2 = v1alpha1.ResourceStatus{
-			Group:     "apps",
-			Kind:      "ReplicaSet",
-			Namespace: "default",
-			Name:      "replicaSet-name2",
-		}
-		appJob = v1alpha1.ResourceStatus{
-			Group:     "batch",
-			Kind:      "Job",
-			Namespace: "default",
-			Name:      "job-name",
-		}
-		appService1 = v1alpha1.ResourceStatus{
-			Group:     "",
-			Kind:      "Service",
-			Namespace: "default",
-			Name:      "service-name1",
-		}
-		appService2 = v1alpha1.ResourceStatus{
-			Group:     "",
-			Kind:      "Service",
-			Namespace: "default",
-			Name:      "service-name2",
-		}
-		appDeployment = v1alpha1.ResourceStatus{
-			Group:     "apps",
-			Kind:      "Deployment",
-			Namespace: "default",
-			Name:      "deployment-name",
-		}
-	)
-	app := v1alpha1.Application{
-		Status: v1alpha1.ApplicationStatus{
-			Resources: []v1alpha1.ResourceStatus{
-				appReplicaSet1, appReplicaSet2, appJob, appService1, appService2, appDeployment},
-		},
-	}
-	// Resource filters
-	var (
-		blankValues = argoappv1.SyncOperationResource{
-			Group:     "",
-			Kind:      "",
-			Name:      "",
-			Namespace: "",
-			Exclude:   false}
-		// *:*:*
-		includeAllResources = argoappv1.SyncOperationResource{
-			Group:     "*",
-			Kind:      "*",
-			Name:      "*",
-			Namespace: "",
-			Exclude:   false}
-		// !*:*:*
-		excludeAllResources = argoappv1.SyncOperationResource{
-			Group:     "*",
-			Kind:      "*",
-			Name:      "*",
-			Namespace: "",
-			Exclude:   true}
-		// *:Service:*
-		includeAllServiceResources = argoappv1.SyncOperationResource{
-			Group:     "*",
-			Kind:      "Service",
-			Name:      "*",
-			Namespace: "",
-			Exclude:   false}
-		// !*:Service:*
-		excludeAllServiceResources = argoappv1.SyncOperationResource{
-			Group:     "*",
-			Kind:      "Service",
-			Name:      "*",
-			Namespace: "",
-			Exclude:   true}
-		// apps:ReplicaSet:replicaSet-name1
-		includeReplicaSet1Resource = argoappv1.SyncOperationResource{
-			Group:     "apps",
-			Kind:      "ReplicaSet",
-			Name:      "replicaSet-name1",
-			Namespace: "",
-			Exclude:   false}
-		// !apps:ReplicaSet:replicaSet-name2
-		excludeReplicaSet2Resource = argoappv1.SyncOperationResource{
-			Group:     "apps",
-			Kind:      "ReplicaSet",
-			Name:      "replicaSet-name2",
-			Namespace: "",
-			Exclude:   true}
-	)
-
-	// Filtered resources
-	var (
-		replicaSet1 = v1alpha1.SyncOperationResource{
-			Group:     "apps",
-			Kind:      "ReplicaSet",
-			Namespace: "default",
-			Name:      "replicaSet-name1",
-		}
-		replicaSet2 = v1alpha1.SyncOperationResource{
-			Group:     "apps",
-			Kind:      "ReplicaSet",
-			Namespace: "default",
-			Name:      "replicaSet-name2",
-		}
-		job = v1alpha1.SyncOperationResource{
-			Group:     "batch",
-			Kind:      "Job",
-			Namespace: "default",
-			Name:      "job-name",
-		}
-		service1 = v1alpha1.SyncOperationResource{
-			Group:     "",
-			Kind:      "Service",
-			Namespace: "default",
-			Name:      "service-name1",
-		}
-		service2 = v1alpha1.SyncOperationResource{
-			Group:     "",
-			Kind:      "Service",
-			Namespace: "default",
-			Name:      "service-name2",
-		}
-		deployment = v1alpha1.SyncOperationResource{
-			Group:     "apps",
-			Kind:      "Deployment",
-			Namespace: "default",
-			Name:      "deployment-name",
-		}
-	)
-	tests := []struct {
-		testName          string
-		selectedResources []*argoappv1.SyncOperationResource
-		expectedResult    []*argoappv1.SyncOperationResource
-	}{
-		//--resource apps:ReplicaSet:replicaSet-name1 --resource *:Service:*
-		{testName: "Include ReplicaSet replicaSet-name1 resouce and all service resources",
-			selectedResources: []*argoappv1.SyncOperationResource{&includeAllServiceResources, &includeReplicaSet1Resource},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1, &service1, &service2},
-		},
-		//--resource apps:ReplicaSet:replicaSet-name1 --resource !*:Service:*
-		{testName: "Include ReplicaSet replicaSet-name1 resouce and exclude all service resources",
-			selectedResources: []*argoappv1.SyncOperationResource{&excludeAllServiceResources, &includeReplicaSet1Resource},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1, &replicaSet2, &job, &deployment},
-		},
-		// --resource !apps:ReplicaSet:replicaSet-name2 --resource !*:Service:*
-		{testName: "Exclude ReplicaSet replicaSet-name2 resouce and all service resources",
-			selectedResources: []*argoappv1.SyncOperationResource{&excludeReplicaSet2Resource, &excludeAllServiceResources},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1, &replicaSet2, &job, &service1, &service2, &deployment},
-		},
-		// --resource !apps:ReplicaSet:replicaSet-name2
-		{testName: "Exclude ReplicaSet replicaSet-name2 resouce",
-			selectedResources: []*argoappv1.SyncOperationResource{&excludeReplicaSet2Resource},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1, &job, &service1, &service2, &deployment},
-		},
-		// --resource apps:ReplicaSet:replicaSet-name1
-		{testName: "Include ReplicaSet replicaSet-name1 resouce",
-			selectedResources: []*argoappv1.SyncOperationResource{&includeReplicaSet1Resource},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1},
-		},
-		// --resource !*:Service:*
-		{testName: "Exclude Service resouces",
-			selectedResources: []*argoappv1.SyncOperationResource{&excludeAllServiceResources},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1, &replicaSet2, &job, &deployment},
-		},
-		// --resource *:Service:*
-		{testName: "Include Service resouces",
-			selectedResources: []*argoappv1.SyncOperationResource{&includeAllServiceResources},
-			expectedResult:    []*argoappv1.SyncOperationResource{&service1, &service2},
-		},
-		// --resource !*:*:*
-		{testName: "Exclude all resouces",
-			selectedResources: []*argoappv1.SyncOperationResource{&excludeAllResources},
-			expectedResult:    nil,
-		},
-		// --resource *:*:*
-		{testName: "Include all resouces",
-			selectedResources: []*argoappv1.SyncOperationResource{&includeAllResources},
-			expectedResult:    []*argoappv1.SyncOperationResource{&replicaSet1, &replicaSet2, &job, &service1, &service2, &deployment},
-		},
-		{testName: "No Filters",
-			selectedResources: []*argoappv1.SyncOperationResource{&blankValues},
-			expectedResult:    nil,
-		},
-		{testName: "Empty Filter",
-			selectedResources: []*argoappv1.SyncOperationResource{},
-			expectedResult:    nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.testName, func(t *testing.T) {
-			filteredResources := filterAppResources(&app, test.selectedResources)
-			assert.Equal(t, test.expectedResult, filteredResources)
-		})
-	}
-}
-
 func TestParseSelectedResources(t *testing.T) {
-	resources := []string{"v1alpha:Application:test",
-		"v1alpha:Application:namespace/test",
-		"!v1alpha:Application:test",
-		"apps:Deployment:default/test",
-		"!*:*:*"}
+	resources := []string{"v1alpha:Application:test", "v1alpha:Application:namespace/test"}
 	operationResources, err := parseSelectedResources(resources)
 	assert.NoError(t, err)
-	assert.Len(t, operationResources, 5)
+	assert.Len(t, operationResources, 2)
 	assert.Equal(t, *operationResources[0], v1alpha1.SyncOperationResource{
 		Namespace: "",
 		Name:      "test",
@@ -1129,27 +981,6 @@ func TestParseSelectedResources(t *testing.T) {
 		Name:      "test",
 		Kind:      "Application",
 		Group:     "v1alpha",
-	})
-	assert.Equal(t, *operationResources[2], v1alpha1.SyncOperationResource{
-		Namespace: "",
-		Name:      "test",
-		Kind:      "Application",
-		Group:     "v1alpha",
-		Exclude:   true,
-	})
-	assert.Equal(t, *operationResources[3], v1alpha1.SyncOperationResource{
-		Namespace: "default",
-		Name:      "test",
-		Kind:      "Deployment",
-		Group:     "apps",
-		Exclude:   false,
-	})
-	assert.Equal(t, *operationResources[4], v1alpha1.SyncOperationResource{
-		Namespace: "",
-		Name:      "*",
-		Kind:      "*",
-		Group:     "*",
-		Exclude:   true,
 	})
 }
 
@@ -1215,7 +1046,7 @@ func TestPrintApplicationTableWide(t *testing.T) {
 					Server:    "http://localhost:8080",
 					Namespace: "default",
 				},
-				Source: &v1alpha1.ApplicationSource{
+				Source: v1alpha1.ApplicationSource{
 					RepoURL:        "https://github.com/argoproj/argocd-example-apps",
 					Path:           "guestbook",
 					TargetRevision: "123",
@@ -1238,263 +1069,4 @@ func TestPrintApplicationTableWide(t *testing.T) {
 	assert.NoError(t, err)
 	expectation := "NAME      CLUSTER                NAMESPACE  PROJECT  STATUS     HEALTH   SYNCPOLICY  CONDITIONS  REPO                                             PATH       TARGET\napp-name  http://localhost:8080  default    prj      OutOfSync  Healthy  <none>      <none>      https://github.com/argoproj/argocd-example-apps  guestbook  123\napp-name  http://localhost:8080  default    prj      OutOfSync  Healthy  <none>      <none>      https://github.com/argoproj/argocd-example-apps  guestbook  123\n"
 	assert.Equal(t, output, expectation)
-}
-
-func TestResourceStateKey(t *testing.T) {
-	rst := resourceState{
-		Group:     "group",
-		Kind:      "kind",
-		Namespace: "namespace",
-		Name:      "name",
-	}
-
-	key := rst.Key()
-	assert.Equal(t, "group/kind/namespace/name", key)
-}
-
-func TestFormatItems(t *testing.T) {
-	rst := resourceState{
-		Group:     "group",
-		Kind:      "kind",
-		Namespace: "namespace",
-		Name:      "name",
-		Status:    "status",
-		Health:    "health",
-		Hook:      "hook",
-		Message:   "message",
-	}
-	items := rst.FormatItems()
-	assert.Equal(t, "group", items[1])
-	assert.Equal(t, "kind", items[2])
-	assert.Equal(t, "namespace", items[3])
-	assert.Equal(t, "name", items[4])
-	assert.Equal(t, "status", items[5])
-	assert.Equal(t, "health", items[6])
-	assert.Equal(t, "hook", items[7])
-	assert.Equal(t, "message", items[8])
-
-}
-
-func TestMerge(t *testing.T) {
-	rst := resourceState{
-		Group:     "group",
-		Kind:      "kind",
-		Namespace: "namespace",
-		Name:      "name",
-		Status:    "status",
-		Health:    "health",
-		Hook:      "hook",
-		Message:   "message",
-	}
-
-	rstNew := resourceState{
-		Group:     "group",
-		Kind:      "kind",
-		Namespace: "namespace",
-		Name:      "name",
-		Status:    "status",
-		Health:    "health",
-		Hook:      "hook2",
-		Message:   "message2",
-	}
-
-	updated := rst.Merge(&rstNew)
-	assert.True(t, updated)
-	assert.Equal(t, rstNew.Hook, rst.Hook)
-	assert.Equal(t, rstNew.Message, rst.Message)
-	assert.Equal(t, rstNew.Status, rst.Status)
-}
-
-func TestMergeWitoutUpdate(t *testing.T) {
-	rst := resourceState{
-		Group:     "group",
-		Kind:      "kind",
-		Namespace: "namespace",
-		Name:      "name",
-		Status:    "status",
-		Health:    "health",
-		Hook:      "hook",
-		Message:   "message",
-	}
-
-	rstNew := resourceState{
-		Group:     "group",
-		Kind:      "kind",
-		Namespace: "namespace",
-		Name:      "name",
-		Status:    "status",
-		Health:    "health",
-		Hook:      "hook",
-		Message:   "message",
-	}
-
-	updated := rst.Merge(&rstNew)
-	assert.False(t, updated)
-}
-
-func TestCheckResourceStatus(t *testing.T) {
-	t.Run("Degraded, Suspended and health status passed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: true,
-			health:    true,
-			degraded:  true,
-		}, string(health.HealthStatusHealthy), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Degraded, Suspended and health status failed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: true,
-			health:    true,
-			degraded:  true,
-		}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.False(t, res)
-	})
-	t.Run("Suspended and health status passed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: true,
-			health:    true,
-		}, string(health.HealthStatusHealthy), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Suspended and health status failed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: true,
-			health:    true,
-		}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.False(t, res)
-	})
-	t.Run("Suspended passed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: true,
-			health:    false,
-		}, string(health.HealthStatusSuspended), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Suspended failed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: true,
-			health:    false,
-		}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.False(t, res)
-	})
-	t.Run("Health passed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: false,
-			health:    true,
-		}, string(health.HealthStatusHealthy), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Health failed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: false,
-			health:    true,
-		}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.False(t, res)
-	})
-	t.Run("Synced passed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Synced failed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeOutOfSync), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Degraded passed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: false,
-			health:    false,
-			degraded:  true,
-		}, string(health.HealthStatusDegraded), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.True(t, res)
-	})
-	t.Run("Degraded failed", func(t *testing.T) {
-		res := checkResourceStatus(watchOpts{
-			suspended: false,
-			health:    false,
-			degraded:  true,
-		}, string(health.HealthStatusProgressing), string(v1alpha1.SyncStatusCodeSynced), &v1alpha1.Operation{})
-		assert.False(t, res)
-	})
-}
-
-func Test_hasAppChanged(t *testing.T) {
-	type args struct {
-		appReq *argoappv1.Application
-		appRes *argoappv1.Application
-		upsert bool
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "App has changed - Labels, Annotations, Finalizers empty",
-			args: args{
-				appReq: testApp("foo", "default", map[string]string{}, map[string]string{}, []string{}),
-				appRes: testApp("foo", "foo", nil, nil, nil),
-				upsert: true,
-			},
-			want: true,
-		},
-		{
-			name: "App unchanged - Labels, Annotations, Finalizers populated",
-			args: args{
-				appReq: testApp("foo", "default", map[string]string{"foo": "bar"}, map[string]string{"foo": "bar"}, []string{"foo"}),
-				appRes: testApp("foo", "default", map[string]string{"foo": "bar"}, map[string]string{"foo": "bar"}, []string{"foo"}),
-				upsert: true,
-			},
-			want: false,
-		},
-		{
-			name: "Apps unchanged - Using empty maps/list locally versus server returning nil",
-			args: args{
-				appReq: testApp("foo", "default", map[string]string{}, map[string]string{}, []string{}),
-				appRes: testApp("foo", "default", nil, nil, nil),
-				upsert: true,
-			},
-			want: false,
-		},
-		{
-			name: "App unchanged - Using empty project locally versus server returning default",
-			args: args{
-				appReq: testApp("foo", "", map[string]string{}, map[string]string{}, []string{}),
-				appRes: testApp("foo", "default", nil, nil, nil),
-			},
-			want: false,
-		},
-		{
-			name: "App unchanged - From upsert=false",
-			args: args{
-				appReq: testApp("foo", "foo", map[string]string{}, map[string]string{}, []string{}),
-				appRes: testApp("foo", "default", nil, nil, nil),
-				upsert: false,
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := hasAppChanged(tt.args.appReq, tt.args.appRes, tt.args.upsert); got != tt.want {
-				t.Errorf("hasAppChanged() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func testApp(name, project string, labels map[string]string, annotations map[string]string, finalizers []string) *argoappv1.Application {
-	return &argoappv1.Application{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Labels:      labels,
-			Annotations: annotations,
-			Finalizers:  finalizers,
-		},
-		Spec: argoappv1.ApplicationSpec{
-			Source: &argoappv1.ApplicationSource{
-				RepoURL: "https://github.com/argoproj/argocd-example-apps.git",
-			},
-			Project: project,
-		},
-	}
 }

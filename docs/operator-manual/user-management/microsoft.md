@@ -116,12 +116,12 @@
 
 ### Configure Argo to use the new Azure AD App registration
 
-1. Edit `argocd-cm` and configure the `data.oidc.config` and `data.url` section:
+1. Edit `argocd-cm` and configure the `data.oidc.config` section:
 
             ConfigMap -> argocd-cm
 
             data:
-               url: https://argocd.example.com/ # Replace with the external base URL of your Argo CD
+               url: https://argocd.example.com/
                oidc.config: |
                      name: Azure
                      issuer: https://login.microsoftonline.com/{directory_tenant_id}/v2.0
