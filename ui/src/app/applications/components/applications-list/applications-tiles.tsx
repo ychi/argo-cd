@@ -128,7 +128,12 @@ export const ApplicationTiles = ({applications, syncApplication, refreshApplicat
                                                     }>
                                                     <div className={`columns small-12 applications-list__info qe-applications-list-${AppUtils.appInstanceName(app)}`}>
                                                         <div className='row'>
-                                                            <div className={app.status.summary.externalURLs?.length > 0 ? 'columns small-10' : 'columns small-11'}>
+                                                            <div
+                                                                className={
+                                                                    AppUtils.getExternalUrls(app.metadata.annotations, app.status.summary.externalURLs)?.length > 0
+                                                                        ? 'columns small-10'
+                                                                        : 'columns small-11'
+                                                                }>
                                                                 <i className={'icon argo-icon-' + (source.chart != null ? 'helm' : 'git')} />
                                                                 <Tooltip content={AppUtils.appInstanceName(app)}>
                                                                     <span className='applications-list__title'>
@@ -136,9 +141,14 @@ export const ApplicationTiles = ({applications, syncApplication, refreshApplicat
                                                                     </span>
                                                                 </Tooltip>
                                                             </div>
-                                                            <div className={app.status.summary.externalURLs?.length > 0 ? 'columns small-2' : 'columns small-1'}>
+                                                            <div
+                                                                className={
+                                                                    AppUtils.getExternalUrls(app.metadata.annotations, app.status.summary.externalURLs)?.length > 0
+                                                                        ? 'columns small-2'
+                                                                        : 'columns small-1'
+                                                                }>
                                                                 <div className='applications-list__external-link'>
-                                                                    <ApplicationURLs urls={app.status.summary.externalURLs} />
+                                                                    <ApplicationURLs urls={AppUtils.getExternalUrls(app.metadata.annotations, app.status.summary.externalURLs)} />
                                                                     <Tooltip content={favList?.includes(app.metadata.name) ? 'Remove Favorite' : 'Add Favorite'}>
                                                                         <button
                                                                             className='large-text-height'

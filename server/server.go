@@ -4,7 +4,6 @@ import (
 	"context"
 	netCtx "context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	goio "io"
 	"io/fs"
@@ -61,6 +60,8 @@ import (
 	"github.com/argoproj/argo-cd/v2/pkg/apiclient"
 	accountpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/account"
 	applicationpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
+
+	"github.com/pkg/errors"
 
 	applicationsetpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/applicationset"
 	certificatepkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/certificate"
@@ -753,7 +754,7 @@ type ArgoCDServiceSet struct {
 func newArgoCDServiceSet(a *ArgoCDServer) *ArgoCDServiceSet {
 	kubectl := kubeutil.NewKubectl()
 	clusterService := cluster.NewServer(a.db, a.enf, a.Cache, kubectl)
-	repoService := repository.NewServer(a.RepoClientset, a.db, a.enf, a.Cache, a.appLister, a.projInformer, a.Namespace, a.settingsMgr)
+	repoService := repository.NewServer(a.RepoClientset, a.db, a.enf, a.Cache, a.appLister, a.projLister, a.settingsMgr)
 	repoCredsService := repocreds.NewServer(a.RepoClientset, a.db, a.enf, a.settingsMgr)
 	var loginRateLimiter func() (io.Closer, error)
 	if maxConcurrentLoginRequestsCount > 0 {
@@ -912,14 +913,15 @@ func (a *ArgoCDServer) newHTTPServer(ctx context.Context, port int, grpcWebHandl
 	th := util_session.WithAuthMiddleware(a.DisableAuth, a.sessionMgr, terminal)
 	mux.Handle("/terminal", th)
 
-	// Proxy extension is currently an alpha feature and is disabled
+	// Dead code for now
+	// Proxy extension is currently an experimental feature and is disabled
 	// by default.
-	if a.EnableProxyExtension {
-		// API server won't panic if extensions fail to register. In
-		// this case an error log will be sent and no extension route
-		// will be added in mux.
-		registerExtensions(mux, a)
-	}
+	// if a.EnableProxyExtension {
+	// // API server won't panic if extensions fail to register. In
+	// // this case an error log will be sent and no extension route
+	// // will be added in mux.
+	// registerExtensions(mux, a)
+	// }
 	mustRegisterGWHandler(versionpkg.RegisterVersionServiceHandler, ctx, gwmux, conn)
 	mustRegisterGWHandler(clusterpkg.RegisterClusterServiceHandler, ctx, gwmux, conn)
 	mustRegisterGWHandler(applicationpkg.RegisterApplicationServiceHandler, ctx, gwmux, conn)
@@ -968,15 +970,12 @@ func (a *ArgoCDServer) newHTTPServer(ctx context.Context, port int, grpcWebHandl
 // registerExtensions will try to register all configured extensions
 // in the given mux. If any error is returned while registering
 // extensions handlers, no route will be added in the given mux.
+// nolint:deadcode,unused,staticcheck
 func registerExtensions(mux *http.ServeMux, a *ArgoCDServer) {
 	sg := extension.NewDefaultSettingsGetter(a.settingsMgr)
-	ag := extension.NewDefaultApplicationGetter(a.appLister)
-	pg := extension.NewDefaultProjectGetter(a.projLister, a.db)
-	em := extension.NewManager(a.log, sg, ag, pg, a.enf)
+	ag := extension.NewDefaultApplicationGetter(a.serviceSet.ApplicationService)
+	em := extension.NewManager(sg, ag, a.log)
 	r := gmux.NewRouter()
-	// register an Auth middleware to ensure all requests to
-	// extensions are authenticated first.
-	r.Use(a.sessionMgr.AuthMiddlewareFunc(a.DisableAuth))
 
 	err := em.RegisterHandlers(r)
 	if err != nil {

@@ -24,6 +24,8 @@ export interface NodeId {
     createdAt?: appModels.Time;
 }
 
+export const ExternalLinkAnnotation = 'link.argocd.argoproj.io/external-link';
+
 type ActionMenuItem = MenuItem & {disabled?: boolean; tooltip?: string};
 
 export function nodeKey(node: NodeId) {
@@ -243,10 +245,10 @@ export const ComparisonStatusIcon = ({
             break;
         case appModels.SyncStatuses.OutOfSync:
             const requiresPruning = resource && resource.requiresPruning;
-            className = requiresPruning ? 'fa fa-trash' : 'fa fa-arrow-alt-circle-up';
+            className = requiresPruning ? 'fa fa-times-circle' : 'fa fa-arrow-alt-circle-up';
             title = 'OutOfSync';
             if (requiresPruning) {
-                title = `${title} (This resource is not present in the application's source. It will be deleted from Kubernetes if the prune option is enabled during sync.)`;
+                title = `${title} (requires pruning)`;
             }
             color = COLORS.sync.out_of_sync;
             break;
@@ -645,7 +647,7 @@ export function syncStatusMessage(app: appModels.Application) {
         case appModels.SyncStatuses.Synced:
             return (
                 <span>
-                    to{' '}
+                    To{' '}
                     <Revision repoUrl={source.repoURL} revision={rev}>
                         {message}
                     </Revision>{' '}
@@ -654,7 +656,7 @@ export function syncStatusMessage(app: appModels.Application) {
         case appModels.SyncStatuses.OutOfSync:
             return (
                 <span>
-                    from{' '}
+                    From{' '}
                     <Revision repoUrl={source.repoURL} revision={rev}>
                         {message}
                     </Revision>{' '}
@@ -825,6 +827,20 @@ export const getAppOperationState = (app: appModels.Application): appModels.Oper
     }
 };
 
+export function getExternalUrls(annotations: {[name: string]: string}, urls: string[]): string[] {
+    if (!annotations) {
+        return urls;
+    }
+    const extLinks = urls || [];
+    const extLink: string = annotations[ExternalLinkAnnotation];
+    if (extLink) {
+        if (!extLinks.includes(extLink)) {
+            extLinks.push(extLink);
+        }
+    }
+    return extLinks;
+}
+
 export function getOperationType(application: appModels.Application) {
     const operation = application.operation || (application.status && application.status.operationState && application.status.operationState.operation);
     if (application.metadata.deletionTimestamp && !application.operation) {
@@ -944,53 +960,6 @@ export function getPodStateReason(pod: appModels.State): {message: string; reaso
 
     return {reason, message};
 }
-
-export const getPodReadinessGatesState = (pod: appModels.State): {nonExistingConditions: string[]; failedConditions: string[]} => {
-    if (!pod.spec?.readinessGates?.length) {
-        return {
-            nonExistingConditions: [],
-            failedConditions: []
-        };
-    }
-
-    const existingConditions = new Map<string, boolean>();
-    const podConditions = new Map<string, boolean>();
-
-    const podStatusConditions = pod.status?.conditions || [];
-
-    for (const condition of podStatusConditions) {
-        existingConditions.set(condition.type, true);
-        // priority order of conditions
-        // eg. if there are multiple conditions set with same name then the one which comes first is evaluated
-        if (podConditions.has(condition.type)) {
-            continue;
-        }
-
-        if (condition.status === 'False') {
-            podConditions.set(condition.type, false);
-        } else if (condition.status === 'True') {
-            podConditions.set(condition.type, true);
-        }
-    }
-
-    const nonExistingConditions: string[] = [];
-    const failedConditions: string[] = [];
-
-    const readinessGates: appModels.ReadinessGate[] = pod.spec?.readinessGates || [];
-
-    for (const readinessGate of readinessGates) {
-        if (!existingConditions.has(readinessGate.conditionType)) {
-            nonExistingConditions.push(readinessGate.conditionType);
-        } else if (podConditions.get(readinessGate.conditionType) === false) {
-            failedConditions.push(readinessGate.conditionType);
-        }
-    }
-
-    return {
-        nonExistingConditions,
-        failedConditions
-    };
-};
 
 export function getConditionCategory(condition: appModels.ApplicationCondition): 'error' | 'warning' | 'info' {
     if (condition.type.endsWith('Error')) {
@@ -1247,5 +1216,3 @@ export function formatCreationTimestamp(creationTimestamp: string) {
         </span>
     );
 }
-
-export const selectPostfix = (arr: string[], singular: string, plural: string) => (arr.length > 1 ? plural : singular);

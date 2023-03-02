@@ -15115,9 +15115,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 ---
 apiVersion: v1
@@ -15208,9 +15208,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 rules:
 - apiGroups:
@@ -15453,9 +15453,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -15642,9 +15642,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 spec:
   ports:
@@ -15795,9 +15795,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 spec:
   selector:
@@ -15877,7 +15877,7 @@ spec:
               key: applicationsetcontroller.enable.progressive.syncs
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         imagePullPolicy: Always
         name: argocd-applicationset-controller
         ports:
@@ -15987,7 +15987,7 @@ spec:
         - -n
         - /usr/local/bin/argocd
         - /shared/argocd-dex
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         imagePullPolicy: Always
         name: copyutil
         securityContext:
@@ -16040,7 +16040,7 @@ spec:
       containers:
       - command:
         - argocd-notifications
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         imagePullPolicy: Always
         livenessProbe:
           tcpSocket:
@@ -16299,7 +16299,7 @@ spec:
           value: /helm-working-dir
         - name: HELM_DATA_HOME
           value: /helm-working-dir
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -16351,7 +16351,7 @@ spec:
         - -n
         - /usr/local/bin/argocd
         - /var/run/argocd/argocd-cmp-server
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         name: copyutil
         securityContext:
           allowPrivilegeEscalation: false
@@ -16626,7 +16626,7 @@ spec:
               key: server.enable.proxy.extension
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -16860,7 +16860,7 @@ spec:
               key: application.namespaces
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.3
         imagePullPolicy: Always
         name: argocd-application-controller
         ports:
