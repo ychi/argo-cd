@@ -1,5 +1,4 @@
 import {DropDownMenu, ErrorNotification, NotificationType} from 'argo-ui';
-import {Tooltip} from 'argo-ui';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 import {clusterName, ConnectionStateIcon, DataLoader, EmptyState, Page} from '../../../shared/components';
@@ -37,16 +36,9 @@ export const ClustersList = (props: RouteComponentProps<{}>) => {
                                                         onClick={() => ctx.navigation.goto(`./${encodeURIComponent(cluster.server)}`)}>
                                                         <div className='row'>
                                                             <div className='columns small-3'>
-                                                                <i className='icon argo-icon-hosts' />
-                                                                <Tooltip content={clusterName(cluster.name)}>
-                                                                    <span>{clusterName(cluster.name)}</span>
-                                                                </Tooltip>
+                                                                <i className='icon argo-icon-hosts' /> {clusterName(cluster.name)}
                                                             </div>
-                                                            <div className='columns small-5'>
-                                                                <Tooltip content={cluster.server}>
-                                                                    <span>{cluster.server}</span>
-                                                                </Tooltip>
-                                                            </div>
+                                                            <div className='columns small-5'>{cluster.server}</div>
                                                             <div className='columns small-2'>{cluster.info.serverVersion}</div>
                                                             <div className='columns small-2'>
                                                                 <ConnectionStateIcon state={cluster.info.connectionState} /> {cluster.info.connectionState.status}

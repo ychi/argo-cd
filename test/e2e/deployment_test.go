@@ -54,11 +54,11 @@ func TestDeploymentWithAnnotationTrackingMode(t *testing.T) {
 		When().
 		Then().
 		And(func(app *Application) {
-			out, err := RunCli("app", "manifests", ctx.AppName())
+			out, err := RunCli("app", "manifests", app.Name)
 			assert.NoError(t, err)
 			assert.Contains(t, out, fmt.Sprintf(`annotations:
     argocd.argoproj.io/tracking-id: %s:apps/Deployment:%s/nginx-deployment
-`, ctx.AppName(), DeploymentNamespace()))
+`, Name(), DeploymentNamespace()))
 		})
 }
 
@@ -77,18 +77,17 @@ func TestDeploymentWithLabelTrackingMode(t *testing.T) {
 		When().
 		Then().
 		And(func(app *Application) {
-			out, err := RunCli("app", "manifests", ctx.AppName())
+			out, err := RunCli("app", "manifests", app.Name)
 			assert.NoError(t, err)
 			assert.Contains(t, out, fmt.Sprintf(`labels:
     app: nginx
     app.kubernetes.io/instance: %s
-`, ctx.AppName()))
+`, Name()))
 		})
 }
 
 func TestDeploymentWithoutTrackingMode(t *testing.T) {
-	ctx := Given(t)
-	ctx.
+	Given(t).
 		Path("deployment").
 		When().
 		CreateApp().
@@ -100,11 +99,11 @@ func TestDeploymentWithoutTrackingMode(t *testing.T) {
 		When().
 		Then().
 		And(func(app *Application) {
-			out, err := RunCli("app", "manifests", ctx.AppName())
+			out, err := RunCli("app", "manifests", app.Name)
 			assert.NoError(t, err)
 			assert.Contains(t, out, fmt.Sprintf(`labels:
     app: nginx
     app.kubernetes.io/instance: %s
-`, ctx.AppName()))
+`, Name()))
 		})
 }

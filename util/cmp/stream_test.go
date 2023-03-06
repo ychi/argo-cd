@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -67,7 +68,7 @@ func TestReceiveApplicationStream(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.NotEmpty(t, workdir)
-		files, err := os.ReadDir(workdir)
+		files, err := ioutil.ReadDir(workdir)
 		require.NoError(t, err)
 		require.Equal(t, 2, len(files))
 		names := []string{}

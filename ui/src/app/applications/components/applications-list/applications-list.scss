@@ -1,19 +1,12 @@
 @import 'node_modules/argo-ui/src/styles/config';
 @import 'node_modules/foundation-sites/scss/util/util';
-@import 'node_modules/argo-ui/src/styles/theme';
 
 .applications-list {
     padding: 1em;
-    @media screen and (max-width: 1024px) {
-        padding: 0;
-    }
-    min-height: 88vh;
     &__title {
         font-weight: bolder;
         font-size: 15px;
-        @include themify($themes) {
-            color: themed('text-1');
-        }
+        color: $argo-color-gray-7;
         padding-top: 0.25em;
         padding-bottom: 0.5em;
         margin-left: 1em;
@@ -119,9 +112,7 @@
 
     &__search {
         border: 1px solid $argo-color-gray-4;
-        @include themify($themes) {
-            background-color: themed('light-argo-gray-2');
-        }
+        background-color: $argo-color-gray-2;
         border-radius: 7px;
         position: relative;
         padding: 0 10px;
@@ -210,12 +201,4 @@
 }
 i.menu_icon {
     vertical-align: middle;
-}
-
-.argo-button {
-    i {
-        @media screen and (max-width: map-get($breakpoints, large)) {
-            margin: 0 auto !important;
-        }
-    }
 }
