@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	gooidc "github.com/coreos/go-oidc/v3/oidc"
+	gooidc "github.com/coreos/go-oidc"
 	"github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -81,7 +81,7 @@ func GetScopesOrDefault(scopes []string) []string {
 
 // NewClientApp will register the Argo CD client app (either via Dex or external OIDC) and return an
 // object which has HTTP handlers for handling the HTTP responses for login and callback
-func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr string, dexTlsConfig *dex.DexTLSConfig, baseHRef string) (*ClientApp, error) {
+func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr, baseHRef string) (*ClientApp, error) {
 	redirectURL, err := settings.RedirectURL()
 	if err != nil {
 		return nil, err
@@ -103,26 +103,21 @@ func NewClientApp(settings *settings.ArgoCDSettings, dexServerAddr string, dexTl
 	if err != nil {
 		return nil, fmt.Errorf("parse redirect-uri: %v", err)
 	}
-
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+	tlsConfig := settings.OIDCTLSConfig()
 	a.client = &http.Client{
-		Transport: transport,
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+			Proxy:           http.ProxyFromEnvironment,
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout:   10 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		},
 	}
-
 	if settings.DexConfig != "" && settings.OIDCConfigRAW == "" {
-		transport.TLSClientConfig = dex.TLSConfig(dexTlsConfig)
-		addrWithProto := dex.DexServerAddressWithProtocol(dexServerAddr, dexTlsConfig)
-		a.client.Transport = dex.NewDexRewriteURLRoundTripper(addrWithProto, a.client.Transport)
-	} else {
-		transport.TLSClientConfig = settings.OIDCTLSConfig()
+		a.client.Transport = dex.NewDexRewriteURLRoundTripper(dexServerAddr, a.client.Transport)
 	}
 	if os.Getenv(common.EnvVarSSODebug) == "1" {
 		a.client.Transport = httputil.DebugTransport{T: a.client.Transport}

@@ -58,7 +58,7 @@ func (c *forwardCacheClient) doLazy(action func(client cache.CacheClient) error)
 		}
 
 		redisClient := redis.NewClient(&redis.Options{Addr: fmt.Sprintf("localhost:%d", redisPort)})
-		c.client = cache.NewRedisCache(redisClient, time.Hour, cache.RedisCompressionNone)
+		c.client = cache.NewRedisCache(redisClient, time.Hour)
 	})
 	if c.err != nil {
 		return c.err
@@ -123,7 +123,7 @@ func (c *forwardRepoClientset) NewRepoServerClient() (io.Closer, repoapiclient.R
 	return c.repoClientset.NewRepoServerClient()
 }
 
-func testAPI(ctx context.Context, clientOpts *apiclient.ClientOptions) error {
+func testAPI(clientOpts *apiclient.ClientOptions) error {
 	apiClient, err := apiclient.NewClient(clientOpts)
 	if err != nil {
 		return err
@@ -133,13 +133,13 @@ func testAPI(ctx context.Context, clientOpts *apiclient.ClientOptions) error {
 		return err
 	}
 	defer io.Close(closer)
-	_, err = versionClient.Version(ctx, &empty.Empty{})
+	_, err = versionClient.Version(context.Background(), &empty.Empty{})
 	return err
 }
 
 // StartLocalServer allows executing command in a headless mode: on the fly starts Argo CD API server and
 // changes provided client options to use started API server port
-func StartLocalServer(ctx context.Context, clientOpts *apiclient.ClientOptions, ctxStr string, port *int, address *string) error {
+func StartLocalServer(clientOpts *apiclient.ClientOptions, ctxStr string, port *int, address *string) error {
 	flags := pflag.NewFlagSet("tmp", pflag.ContinueOnError)
 	clientConfig := cli.AddKubectlFlagsToSet(flags)
 	startInProcessAPI := clientOpts.Core
@@ -200,20 +200,20 @@ func StartLocalServer(ctx context.Context, clientOpts *apiclient.ClientOptions, 
 	if err != nil {
 		return err
 	}
+	ctx := context.Background()
 	appstateCache := appstatecache.NewCache(cache.NewCache(&forwardCacheClient{namespace: namespace, context: ctxStr}), time.Hour)
 	srv := server.NewServer(ctx, server.ArgoCDServerOpts{
-		EnableGZip:           false,
-		Namespace:            namespace,
-		ListenPort:           *port,
-		AppClientset:         appClientset,
-		DisableAuth:          true,
-		RedisClient:          redis.NewClient(&redis.Options{Addr: mr.Addr()}),
-		Cache:                servercache.NewCache(appstateCache, 0, 0, 0),
-		KubeClientset:        kubeClientset,
-		Insecure:             true,
-		ListenHost:           *address,
-		RepoClientset:        &forwardRepoClientset{namespace: namespace, context: ctxStr},
-		EnableProxyExtension: false,
+		EnableGZip:    false,
+		Namespace:     namespace,
+		ListenPort:    *port,
+		AppClientset:  appClientset,
+		DisableAuth:   true,
+		RedisClient:   redis.NewClient(&redis.Options{Addr: mr.Addr()}),
+		Cache:         servercache.NewCache(appstateCache, 0, 0, 0),
+		KubeClientset: kubeClientset,
+		Insecure:      true,
+		ListenHost:    *address,
+		RepoClientset: &forwardRepoClientset{namespace: namespace, context: ctxStr},
 	})
 	srv.Init(ctx)
 
@@ -229,7 +229,7 @@ func StartLocalServer(ctx context.Context, clientOpts *apiclient.ClientOptions, 
 	}
 	tries := 5
 	for i := 0; i < tries; i++ {
-		err = testAPI(ctx, clientOpts)
+		err = testAPI(clientOpts)
 		if err == nil {
 			break
 		}
@@ -240,10 +240,8 @@ func StartLocalServer(ctx context.Context, clientOpts *apiclient.ClientOptions, 
 
 // NewClientOrDie creates a new API client from a set of config options, or fails fatally if the new client creation fails.
 func NewClientOrDie(opts *apiclient.ClientOptions, c *cobra.Command) apiclient.Client {
-	ctx := c.Context()
-
 	ctxStr := initialize.RetrieveContextIfChanged(c.Flag("context"))
-	err := StartLocalServer(ctx, opts, ctxStr, nil, nil)
+	err := StartLocalServer(opts, ctxStr, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
