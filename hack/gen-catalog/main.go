@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -81,7 +82,7 @@ func newCatalogCommand() *cobra.Command {
 			d, err := yaml.Marshal(cm)
 			dieOnError(err, "Failed to marshal final configmap")
 
-			err = os.WriteFile(target, d, 0644)
+			err = ioutil.WriteFile(target, d, 0644)
 			dieOnError(err, "Failed to write builtin configmap")
 
 		},
@@ -102,14 +103,14 @@ func newDocsCommand() *cobra.Command {
 			notificationTemplates, notificationTriggers, err := buildConfigFromFS(templatesDir, triggersDir)
 			dieOnError(err, "Failed to build builtin config")
 			generateBuiltInTriggersDocs(&builtItDocsData, notificationTriggers, notificationTemplates)
-			if err := os.WriteFile("./docs/operator-manual/notifications/catalog.md", builtItDocsData.Bytes(), 0644); err != nil {
+			if err := ioutil.WriteFile("./docs/operator-manual/notifications/catalog.md", builtItDocsData.Bytes(), 0644); err != nil {
 				log.Fatal(err)
 			}
 			var commandDocs bytes.Buffer
 			if err := generateCommandsDocs(&commandDocs); err != nil {
 				log.Fatal(err)
 			}
-			if err := os.WriteFile("./docs/operator-manual/notifications/troubleshooting-commands.md", commandDocs.Bytes(), 0644); err != nil {
+			if err := ioutil.WriteFile("./docs/operator-manual/notifications/troubleshooting-commands.md", commandDocs.Bytes(), 0644); err != nil {
 				log.Fatal(err)
 			}
 		},
@@ -150,27 +151,18 @@ func generateBuiltInTriggersDocs(out io.Writer, triggers map[string][]triggers.C
 }
 
 func generateCommandsDocs(out io.Writer) error {
-    // create parents so that CommandPath() is correctly resolved
-	mainCmd := &cobra.Command{Use: "argocd"}
-	adminCmd := &cobra.Command{Use: "admin"}
-	toolCmd := admin.NewNotificationsCommand()
-	adminCmd.AddCommand(toolCmd)
-	mainCmd.AddCommand(adminCmd)
-	for _, mainSubCommand := range mainCmd.Commands() {
-		for _, adminSubCommand := range mainSubCommand.Commands() {
-			for _, toolSubCommand := range adminSubCommand.Commands() {
-				for _, c := range toolSubCommand.Commands() {
-					var cmdDesc bytes.Buffer
-					if err := doc.GenMarkdown(c, &cmdDesc); err != nil {
-						return err
-					}
-					for _, line := range strings.Split(cmdDesc.String(), "\n") {
-						if strings.HasPrefix(line, "### SEE ALSO") {
-							break
-						}
-						_, _ = fmt.Fprintf(out, "%s\n", line)
-					}
+	toolsCmd := admin.NewNotificationsCommand()
+	for _, subCommand := range toolsCmd.Commands() {
+		for _, c := range subCommand.Commands() {
+			var cmdDesc bytes.Buffer
+			if err := doc.GenMarkdown(c, &cmdDesc); err != nil {
+				return err
+			}
+			for _, line := range strings.Split(cmdDesc.String(), "\n") {
+				if strings.HasPrefix(line, "### SEE ALSO") {
+					break
 				}
+				_, _ = fmt.Fprintf(out, "%s\n", line)
 			}
 		}
 	}
@@ -193,7 +185,7 @@ func buildConfigFromFS(templatesDir string, triggersDir string) (map[string]serv
 		if info.IsDir() {
 			return nil
 		}
-		data, err := os.ReadFile(p)
+		data, err := ioutil.ReadFile(p)
 		if err != nil {
 			return err
 		}
@@ -217,7 +209,7 @@ func buildConfigFromFS(templatesDir string, triggersDir string) (map[string]serv
 		if info.IsDir() {
 			return nil
 		}
-		data, err := os.ReadFile(p)
+		data, err := ioutil.ReadFile(p)
 		if err != nil {
 			return err
 		}

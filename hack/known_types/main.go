@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/importer"
 	"go/types"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -77,12 +78,12 @@ import corev1 "k8s.io/api/core/v1"
 func init() {%s
 }`, strings.Join(mapItems, ""))
 			if docsOutputPath != "" {
-				if err = os.WriteFile(docsOutputPath, []byte(strings.Join(docs, "\n")), 0644); err != nil {
+				if err = ioutil.WriteFile(docsOutputPath, []byte(strings.Join(docs, "\n")), 0644); err != nil {
 					return err
 				}
 			}
 
-			return os.WriteFile(outputPath, []byte(res+"\n"), 0644)
+			return ioutil.WriteFile(outputPath, []byte(res), 0644)
 		},
 	}
 	command.Flags().StringVar(&docsOutputPath, "docs", "", "Docs output file path")

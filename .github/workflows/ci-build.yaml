@@ -12,7 +12,7 @@ on:
 
 env:
   # Golang version to use across CI steps
-  GOLANG_VERSION: '1.19'
+  GOLANG_VERSION: '1.18'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -24,7 +24,7 @@ permissions:
 jobs:
   check-go:
     name: Ensure Go modules synchronicity
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -42,7 +42,7 @@ jobs:
 
   build-go:
     name: Build & cache Go code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -66,7 +66,7 @@ jobs:
       contents: read  # for actions/checkout to fetch code
       pull-requests: read  # for golangci/golangci-lint-action to fetch pull requests
     name: Lint Go code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -77,12 +77,12 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@0ad9a0988b3973e851ab0a07adf248ec2e100376 # v3.3.1
         with:
-          version: v1.51.0
+          version: v1.45.2
           args: --timeout 10m --exclude SA5011 --verbose
 
   test-go:
     name: Run unit tests for Go packages
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs:
       - build-go
     env:
@@ -149,7 +149,7 @@ jobs:
 
   test-go-race:
     name: Run unit tests with -race, for Go packages
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs:
       - build-go
     env:
@@ -211,7 +211,7 @@ jobs:
 
   codegen:
     name: Check changes to generated code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -259,7 +259,7 @@ jobs:
 
   build-ui:
     name: Build, test & lint UI code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
@@ -291,7 +291,7 @@ jobs:
 
   analyze:
     name: Process & analyze test artifacts
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs:
       - test-go
       - build-ui
@@ -357,10 +357,10 @@ jobs:
 
   test-e2e:
     name: Run end-to-end tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        k3s-version: [v1.26.0, v1.25.4, v1.24.3, v1.23.3]
+        k3s-version: [v1.23.3, v1.22.6, v1.21.2]
     needs: 
       - build-go
     env:
@@ -372,7 +372,6 @@ jobs:
       ARGOCD_E2E_K3S: "true"
       ARGOCD_IN_CI: "true"
       ARGOCD_E2E_APISERVER_PORT: "8088"
-      ARGOCD_APPLICATION_NAMESPACES: "argocd-e2e-external"
       ARGOCD_SERVER: "127.0.0.1:8088"
       GITHUB_TOKEN: ${{ secrets.E2E_TEST_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       GITLAB_TOKEN: ${{ secrets.E2E_TEST_GITLAB_TOKEN }}  
@@ -386,6 +385,14 @@ jobs:
       - name: GH actions workaround - Kill XSP4 process
         run: |
           sudo pkill mono || true
+      # ubuntu-22.04 comes with kubectl, but the version is not pinned. The version as of 2022-12-05 is 1.26.0 which
+      # breaks the `TestNamespacedResourceDiffing` e2e test. So we'll pin to 1.25 and then fix the underlying issue.
+      - name: Install kubectl
+        run: |
+          rm /usr/local/bin/kubectl
+          curl -LO https://dl.k8s.io/release/v1.25.4/bin/linux/amd64/kubectl
+          mv kubectl /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
       - name: Install K3S
         env:
           INSTALL_K3S_VERSION: ${{ matrix.k3s-version }}+k3s1

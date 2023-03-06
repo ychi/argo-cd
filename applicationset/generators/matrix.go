@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/imdario/mergo"
-
 	"github.com/argoproj/argo-cd/v2/applicationset/utils"
-	argoprojiov1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	argoprojiov1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/applicationset/v1alpha1"
 )
 
 var _ Generator = (*MatrixGenerator)(nil)
@@ -30,7 +28,7 @@ func NewMatrixGenerator(supportedGenerators map[string]Generator) Generator {
 	return m
 }
 
-func (m *MatrixGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.ApplicationSetGenerator, appSet *argoprojiov1alpha1.ApplicationSet) ([]map[string]interface{}, error) {
+func (m *MatrixGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.ApplicationSetGenerator, appSet *argoprojiov1alpha1.ApplicationSet) ([]map[string]string, error) {
 
 	if appSetGenerator.Matrix == nil {
 		return nil, EmptyAppSetGeneratorError
@@ -44,42 +42,31 @@ func (m *MatrixGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.App
 		return nil, ErrMoreThanTwoGenerators
 	}
 
-	res := []map[string]interface{}{}
+	res := []map[string]string{}
 
-	g0, err := m.getParams(appSetGenerator.Matrix.Generators[0], appSet, nil)
+	g0, err := m.getParams(appSetGenerator.Matrix.Generators[0], appSet)
 	if err != nil {
 		return nil, err
 	}
-	for _, a := range g0 {
-		g1, err := m.getParams(appSetGenerator.Matrix.Generators[1], appSet, a)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get params for second generator in the matrix generator: %w", err)
-		}
-		for _, b := range g1 {
+	g1, err := m.getParams(appSetGenerator.Matrix.Generators[1], appSet)
+	if err != nil {
+		return nil, err
+	}
 
-			if appSet.Spec.GoTemplate {
-				tmp := map[string]interface{}{}
-				if err := mergo.Merge(&tmp, a); err != nil {
-					return nil, fmt.Errorf("failed to merge params from the first generator in the matrix generator with temp map: %w", err)
-				}
-				if err := mergo.Merge(&tmp, b); err != nil {
-					return nil, fmt.Errorf("failed to merge params from the first generator in the matrix generator with the second: %w", err)
-				}
-				res = append(res, tmp)
-			} else {
-				val, err := utils.CombineStringMaps(a, b)
-				if err != nil {
-					return nil, fmt.Errorf("failed to combine string maps with merging params for the matrix generator: %w", err)
-				}
-				res = append(res, utils.ConvertToMapStringInterface(val))
+	for _, a := range g0 {
+		for _, b := range g1 {
+			val, err := utils.CombineStringMaps(a, b)
+			if err != nil {
+				return nil, err
 			}
+			res = append(res, val)
 		}
 	}
 
 	return res, nil
 }
 
-func (m *MatrixGenerator) getParams(appSetBaseGenerator argoprojiov1alpha1.ApplicationSetNestedGenerator, appSet *argoprojiov1alpha1.ApplicationSet, params map[string]interface{}) ([]map[string]interface{}, error) {
+func (m *MatrixGenerator) getParams(appSetBaseGenerator argoprojiov1alpha1.ApplicationSetNestedGenerator, appSet *argoprojiov1alpha1.ApplicationSet) ([]map[string]string, error) {
 	matrixGen, err := getMatrixGenerator(appSetBaseGenerator)
 	if err != nil {
 		return nil, err
@@ -99,12 +86,10 @@ func (m *MatrixGenerator) getParams(appSetBaseGenerator argoprojiov1alpha1.Appli
 			PullRequest:             appSetBaseGenerator.PullRequest,
 			Matrix:                  matrixGen,
 			Merge:                   mergeGen,
-			Selector:                appSetBaseGenerator.Selector,
 		},
 		m.supportedGenerators,
 		argoprojiov1alpha1.ApplicationSetTemplate{},
-		appSet,
-		params)
+		appSet)
 
 	if err != nil {
 		return nil, fmt.Errorf("child generator returned an error on parameter generation: %v", err)

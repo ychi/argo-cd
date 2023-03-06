@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -34,7 +35,7 @@ func captureStdout(callback func()) (string, error) {
 	callback()
 	utils.Close(w)
 
-	data, err := io.ReadAll(r)
+	data, err := ioutil.ReadAll(r)
 
 	if err != nil {
 		return "", err
@@ -43,8 +44,6 @@ func captureStdout(callback func()) (string, error) {
 }
 
 func newSettingsManager(data map[string]string) *settings.SettingsManager {
-	ctx := context.Background()
-
 	clientset := fake.NewSimpleClientset(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -64,7 +63,7 @@ func newSettingsManager(data map[string]string) *settings.SettingsManager {
 			"server.secretkey": []byte("test"),
 		},
 	})
-	return settings.NewSettingsManager(ctx, clientset, "default")
+	return settings.NewSettingsManager(context.Background(), clientset, "default")
 }
 
 type fakeCmdContext struct {
@@ -77,7 +76,7 @@ func newCmdContext(data map[string]string) *fakeCmdContext {
 	return &fakeCmdContext{mgr: newSettingsManager(data)}
 }
 
-func (ctx *fakeCmdContext) createSettingsManager(context.Context) (*settings.SettingsManager, error) {
+func (ctx *fakeCmdContext) createSettingsManager() (*settings.SettingsManager, error) {
 	return ctx.mgr, nil
 }
 
@@ -89,8 +88,6 @@ type validatorTestCase struct {
 }
 
 func TestCreateSettingsManager(t *testing.T) {
-	ctx := context.Background()
-
 	f, closer, err := tempFile(`apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -103,7 +100,7 @@ data:
 	defer utils.Close(closer)
 
 	opts := settingsOpts{argocdCMPath: f}
-	settingsManager, err := opts.createSettingsManager(ctx)
+	settingsManager, err := opts.createSettingsManager()
 
 	if !assert.NoError(t, err) {
 		return
@@ -234,7 +231,7 @@ spec:
 )
 
 func tempFile(content string) (string, io.Closer, error) {
-	f, err := os.CreateTemp("", "*.yaml")
+	f, err := ioutil.TempFile("", "*.yaml")
 	if err != nil {
 		return "", nil, err
 	}
@@ -243,11 +240,7 @@ func tempFile(content string) (string, io.Closer, error) {
 		_ = os.Remove(f.Name())
 		return "", nil, err
 	}
-	defer func() {
-		if err = f.Close(); err != nil {
-			panic(err)
-		}
-	}()
+	defer f.Close()
 	return f.Name(), utils.NewCloser(func() error {
 		return os.Remove(f.Name())
 	}), nil
