@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -20,7 +21,7 @@ func TestUnmarshalLocalFile(t *testing.T) {
 	)
 	sentinel := fmt.Sprintf("---\nfield1: %q\nfield2: %d", field1, field2)
 
-	file, err := os.CreateTemp(os.TempDir(), "")
+	file, err := ioutil.TempFile(os.TempDir(), "")
 	if err != nil {
 		panic(err)
 	}

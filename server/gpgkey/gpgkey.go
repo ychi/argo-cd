@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"context"
+	"golang.org/x/net/context"
 
 	gpgkeypkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/gpgkey"
 	appsv1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
