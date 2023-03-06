@@ -158,7 +158,7 @@ func TestListPullRequestBasicAuth(t *testing.T) {
 
 func TestListResponseError(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(500)
 	}))
 	defer ts.Close()
 	svc, _ := NewBitbucketServiceNoAuth(context.Background(), ts.URL, "PROJECT", "REPO")

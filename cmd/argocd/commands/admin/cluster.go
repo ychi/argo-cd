@@ -265,7 +265,9 @@ func runClusterNamespacesCommand(ctx context.Context, clientConfig clientcmd.Cli
 					}
 				}
 			} else {
-				nsSet[app.Spec.Destination.Namespace] = true
+				if app.Spec.Destination.Server == cluster.Server {
+					nsSet[app.Spec.Destination.Namespace] = true
+				}
 			}
 		}
 		var namespaces []string

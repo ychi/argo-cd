@@ -971,7 +971,7 @@ func githubSCMMockHandler(t *testing.T) func(http.ResponseWriter, *http.Request)
 				t.Fail()
 			}
 		default:
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(404)
 		}
 	}
 }
@@ -1279,7 +1279,7 @@ func githubPullMockHandler(t *testing.T) func(http.ResponseWriter, *http.Request
 				t.Fail()
 			}
 		default:
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(404)
 		}
 	}
 }
