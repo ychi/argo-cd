@@ -1,9 +1,9 @@
-## argocd admin notifications template get
+## notifications template get
 
 Prints information about configured templates
 
 ```
-argocd admin notifications template get [flags]
+notifications template get [flags]
 ```
 
 ### Examples
@@ -11,9 +11,9 @@ argocd admin notifications template get [flags]
 ```
 
 # prints all templates
-argocd admin notifications template get
+notifications template get
 # print YAML formatted app-sync-succeeded template definition
-argocd admin notifications template get app-sync-succeeded -o=yaml
+notifications template get app-sync-succeeded -o=yaml
 
 ```
 
@@ -43,7 +43,6 @@ argocd admin notifications template get app-sync-succeeded -o=yaml
       --kubeconfig string               Path to a kube config. Only required if out-of-cluster
   -n, --namespace string                If present, the namespace scope for this CLI request
       --password string                 Password for basic authentication to the API server
-      --proxy-url string                If provided, this URL will be used to connect via proxy
       --request-timeout string          The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
       --secret string                   argocd-notifications-secret.yaml file path. Use empty secret if provided value is ':empty'
       --server string                   The address and port of the Kubernetes API server
@@ -53,12 +52,12 @@ argocd admin notifications template get app-sync-succeeded -o=yaml
       --username string                 Username for basic authentication to the API server
 ```
 
-## argocd admin notifications template notify
+## notifications template notify
 
 Generates notification using the specified template and send it to specified recipients
 
 ```
-argocd admin notifications template notify NAME RESOURCE_NAME [flags]
+notifications template notify NAME RESOURCE_NAME [flags]
 ```
 
 ### Examples
@@ -66,10 +65,10 @@ argocd admin notifications template notify NAME RESOURCE_NAME [flags]
 ```
 
 # Trigger notification using in-cluster config map and secret
-argocd admin notifications template notify app-sync-succeeded guestbook --recipient slack:my-slack-channel
+notifications template notify app-sync-succeeded guestbook --recipient slack:my-slack-channel
 
 # Render notification render generated notification in console
-argocd admin notifications template notify app-sync-succeeded guestbook
+notifications template notify app-sync-succeeded guestbook
 
 ```
 
@@ -99,7 +98,6 @@ argocd admin notifications template notify app-sync-succeeded guestbook
       --kubeconfig string               Path to a kube config. Only required if out-of-cluster
   -n, --namespace string                If present, the namespace scope for this CLI request
       --password string                 Password for basic authentication to the API server
-      --proxy-url string                If provided, this URL will be used to connect via proxy
       --request-timeout string          The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
       --secret string                   argocd-notifications-secret.yaml file path. Use empty secret if provided value is ':empty'
       --server string                   The address and port of the Kubernetes API server
@@ -109,12 +107,12 @@ argocd admin notifications template notify app-sync-succeeded guestbook
       --username string                 Username for basic authentication to the API server
 ```
 
-## argocd admin notifications trigger get
+## notifications trigger get
 
 Prints information about configured triggers
 
 ```
-argocd admin notifications trigger get [flags]
+notifications trigger get [flags]
 ```
 
 ### Examples
@@ -122,9 +120,9 @@ argocd admin notifications trigger get [flags]
 ```
 
 # prints all triggers
-argocd admin notifications trigger get
+notifications trigger get
 # print YAML formatted on-sync-failed trigger definition
-argocd admin notifications trigger get on-sync-failed -o=yaml
+notifications trigger get on-sync-failed -o=yaml
 
 ```
 
@@ -154,7 +152,6 @@ argocd admin notifications trigger get on-sync-failed -o=yaml
       --kubeconfig string               Path to a kube config. Only required if out-of-cluster
   -n, --namespace string                If present, the namespace scope for this CLI request
       --password string                 Password for basic authentication to the API server
-      --proxy-url string                If provided, this URL will be used to connect via proxy
       --request-timeout string          The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
       --secret string                   argocd-notifications-secret.yaml file path. Use empty secret if provided value is ':empty'
       --server string                   The address and port of the Kubernetes API server
@@ -164,12 +161,12 @@ argocd admin notifications trigger get on-sync-failed -o=yaml
       --username string                 Username for basic authentication to the API server
 ```
 
-## argocd admin notifications trigger run
+## notifications trigger run
 
 Evaluates specified trigger condition and prints the result
 
 ```
-argocd admin notifications trigger run NAME RESOURCE_NAME [flags]
+notifications trigger run NAME RESOURCE_NAME [flags]
 ```
 
 ### Examples
@@ -177,10 +174,10 @@ argocd admin notifications trigger run NAME RESOURCE_NAME [flags]
 ```
 
 # Execute trigger configured in 'argocd-notification-cm' ConfigMap
-argocd admin notifications trigger run on-sync-status-unknown ./sample-app.yaml
+notifications trigger run on-sync-status-unknown ./sample-app.yaml
 
 # Execute trigger using my-config-map.yaml instead of 'argocd-notifications-cm' ConfigMap
-argocd admin notifications trigger run on-sync-status-unknown ./sample-app.yaml \
+notifications trigger run on-sync-status-unknown ./sample-app.yaml \
     --config-map ./my-config-map.yaml
 ```
 
@@ -209,7 +206,6 @@ argocd admin notifications trigger run on-sync-status-unknown ./sample-app.yaml 
       --kubeconfig string               Path to a kube config. Only required if out-of-cluster
   -n, --namespace string                If present, the namespace scope for this CLI request
       --password string                 Password for basic authentication to the API server
-      --proxy-url string                If provided, this URL will be used to connect via proxy
       --request-timeout string          The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
       --secret string                   argocd-notifications-secret.yaml file path. Use empty secret if provided value is ':empty'
       --server string                   The address and port of the Kubernetes API server

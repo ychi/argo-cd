@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/argoproj/argo-cd/v2/applicationset/utils"
-	argoprojiov1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+	argoprojiov1alpha1 "github.com/argoproj/argo-cd/v2/pkg/apis/applicationset/v1alpha1"
 )
 
 var _ Generator = (*DuckTypeGenerator)(nil)
@@ -60,7 +60,7 @@ func (g *DuckTypeGenerator) GetTemplate(appSetGenerator *argoprojiov1alpha1.Appl
 	return &appSetGenerator.ClusterDecisionResource.Template
 }
 
-func (g *DuckTypeGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.ApplicationSetGenerator, appSet *argoprojiov1alpha1.ApplicationSet) ([]map[string]interface{}, error) {
+func (g *DuckTypeGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.ApplicationSetGenerator, _ *argoprojiov1alpha1.ApplicationSet) ([]map[string]string, error) {
 
 	if appSetGenerator == nil {
 		return nil, EmptyAppSetGeneratorError
@@ -152,7 +152,7 @@ func (g *DuckTypeGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.A
 
 	}
 
-	res := []map[string]interface{}{}
+	res := []map[string]string{}
 	clusterDecisions := []interface{}{}
 
 	// Build the decision slice
@@ -178,7 +178,7 @@ func (g *DuckTypeGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.A
 		for _, cluster := range clusterDecisions {
 
 			// generated instance of cluster params
-			params := map[string]interface{}{}
+			params := map[string]string{}
 
 			log.Infof("cluster: %v", cluster)
 			matchValue := cluster.(map[string]interface{})[matchKey]
@@ -215,14 +215,7 @@ func (g *DuckTypeGenerator) GenerateParams(appSetGenerator *argoprojiov1alpha1.A
 			}
 
 			for key, value := range appSetGenerator.ClusterDecisionResource.Values {
-				if appSet.Spec.GoTemplate {
-					if params["values"] == nil {
-						params["values"] = map[string]string{}
-					}
-					params["values"].(map[string]string)[key] = value
-				} else {
-					params[fmt.Sprintf("values.%s", key)] = value
-				}
+				params[fmt.Sprintf("values.%s", key)] = value
 			}
 
 			res = append(res, params)

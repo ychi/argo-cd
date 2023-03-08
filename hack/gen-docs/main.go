@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"sort"
@@ -34,7 +35,7 @@ func generateNotificationsDocs() {
 func updateMkDocsNav(parent string, child string, subchild string, files []string) error {
 	trimPrefixes(files, "docs/")
 	sort.Strings(files)
-	data, err := os.ReadFile("mkdocs.yml")
+	data, err := ioutil.ReadFile("mkdocs.yml")
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func updateMkDocsNav(parent string, child string, subchild string, files []strin
 	if err != nil {
 		return err
 	}
-	return os.WriteFile("mkdocs.yml", newmkdocs, 0644)
+	return ioutil.WriteFile("mkdocs.yml", newmkdocs, 0644)
 }
 
 func trimPrefixes(files []string, prefix string) {

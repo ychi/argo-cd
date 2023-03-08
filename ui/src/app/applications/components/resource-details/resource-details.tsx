@@ -1,6 +1,5 @@
-import {DataLoader, DropDown, Tab, Tabs} from 'argo-ui';
+import {DataLoader, Tab, Tabs} from 'argo-ui';
 import * as React from 'react';
-import {useState} from 'react';
 import {EventsList, YamlEditor} from '../../../shared/components';
 import * as models from '../../../shared/models';
 import {ErrorBoundary} from '../../../shared/components/error-boundary/error-boundary';
@@ -35,11 +34,13 @@ interface ResourceDetailsProps {
 
 export const ResourceDetails = (props: ResourceDetailsProps) => {
     const {selectedNode, updateApp, application, isAppSelected, tree} = {...props};
-    const [activeContainer, setActiveContainer] = useState();
     const appContext = React.useContext(Context);
     const tab = new URLSearchParams(appContext.history.location.search).get('tab');
     const selectedNodeInfo = NodeInfo(new URLSearchParams(appContext.history.location.search).get('node'));
     const selectedNodeKey = selectedNodeInfo.key;
+
+    const page = parseInt(new URLSearchParams(appContext.history.location.search).get('page'), 10) || 0;
+    const untilTimes = (new URLSearchParams(appContext.history.location.search).get('untilTimes') || '').split(',') || [];
 
     const getResourceTabs = (
         node: ResourceNode,
@@ -85,10 +86,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                 });
             }
 
-            const onClickContainer = (group: any, i: number, activeTab: string) => {
-                setActiveContainer(group.offset + i);
-                SelectNode(selectedNodeKey, activeContainer, activeTab, appContext);
-            };
+            const onClickContainer = (group: any, i: number) => SelectNode(selectedNodeKey, group.offset + i, 'logs', appContext);
 
             if (logsAllowed) {
                 tabs = tabs.concat([
@@ -105,8 +103,9 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                                     name={node.name}
                                     namespace={podState.metadata.namespace}
                                     applicationName={application.metadata.name}
-                                    applicationNamespace={application.metadata.namespace}
-                                    containerName={AppUtils.getContainerName(podState, activeContainer)}
+                                    containerName={AppUtils.getContainerName(podState, selectedNodeInfo.container)}
+                                    page={{number: page, untilTimes}}
+                                    setPage={pageData => appContext.navigation.goto('.', {page: pageData.number, untilTimes: pageData.untilTimes.join(',')})}
                                     containerGroups={containerGroups}
                                     onClickContainer={onClickContainer}
                                 />
@@ -122,15 +121,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                         icon: 'fa fa-terminal',
                         title: 'Terminal',
                         content: (
-                            <PodTerminalViewer
-                                applicationName={application.metadata.name}
-                                applicationNamespace={application.metadata.namespace}
-                                projectName={application.spec.project}
-                                podState={podState}
-                                selectedNode={selectedNode}
-                                containerName={AppUtils.getContainerName(podState, activeContainer)}
-                                onClickContainer={onClickContainer}
-                            />
+                            <PodTerminalViewer applicationName={application.metadata.name} projectName={application.spec.project} podState={podState} selectedNode={selectedNode} />
                         )
                     }
                 ]);
@@ -168,9 +159,9 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                         key='appDetails'
                         input={application}
                         load={app =>
-                            services.repos.appDetails(AppUtils.getAppDefaultSource(app), app.metadata.name, app.spec.project).catch(() => ({
+                            services.repos.appDetails(app.spec.source, app.metadata.name, app.spec.project).catch(() => ({
                                 type: 'Directory' as AppSourceType,
-                                path: AppUtils.getAppDefaultSource(app).path
+                                path: application.spec.source.path
                             }))
                         }>
                         {(details: RepoAppDetails) => (
@@ -192,7 +183,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                         input={application.spec}
                         onSave={async patch => {
                             const spec = JSON.parse(JSON.stringify(application.spec));
-                            return services.applications.updateSpec(application.metadata.name, application.metadata.namespace, jsonMergePatch.apply(spec, JSON.parse(patch)));
+                            return services.applications.updateSpec(application.metadata.name, jsonMergePatch.apply(spec, JSON.parse(patch)));
                         }}
                     />
                 )
@@ -208,7 +199,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                     <DataLoader
                         key='diff'
                         load={async () =>
-                            await services.applications.managedResources(application.metadata.name, application.metadata.namespace, {
+                            await services.applications.managedResources(application.metadata.name, {
                                 fields: ['items.normalizedLiveState', 'items.predictedLiveState', 'items.group', 'items.kind', 'items.namespace', 'items.name']
                             })
                         }>
@@ -221,7 +212,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
         tabs.push({
             title: 'EVENTS',
             key: 'event',
-            content: <ApplicationResourceEvents applicationName={application.metadata.name} applicationNamespace={application.metadata.namespace} />
+            content: <ApplicationResourceEvents applicationName={application.metadata.name} />
         });
 
         const extensionTabs = services.extensions.getResourceTabs('argoproj.io', 'Application').map((ext, i) => ({
@@ -243,7 +234,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                     noLoaderOnInputChange={true}
                     input={selectedNode.resourceVersion}
                     load={async () => {
-                        const managedResources = await services.applications.managedResources(application.metadata.name, application.metadata.namespace, {
+                        const managedResources = await services.applications.managedResources(application.metadata.name, {
                             id: {
                                 name: selectedNode.name,
                                 namespace: selectedNode.namespace,
@@ -258,10 +249,10 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                         if (controlled && controlled.targetState) {
                             resQuery.version = AppUtils.parseApiVersion(controlled.targetState.apiVersion).version;
                         }
-                        const liveState = await services.applications.getResource(application.metadata.name, application.metadata.namespace, resQuery).catch(() => null);
+                        const liveState = await services.applications.getResource(application.metadata.name, resQuery).catch(() => null);
                         const events =
                             (liveState &&
-                                (await services.applications.resourceEvents(application.metadata.name, application.metadata.namespace, {
+                                (await services.applications.resourceEvents(application.metadata.name, {
                                     name: liveState.metadata.name,
                                     namespace: liveState.metadata.namespace,
                                     uid: liveState.metadata.uid
@@ -273,7 +264,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                         } else {
                             const childPod = AppUtils.findChildPod(selectedNode, tree);
                             if (childPod) {
-                                podState = await services.applications.getResource(application.metadata.name, application.metadata.namespace, childPod).catch(() => null);
+                                podState = await services.applications.getResource(application.metadata.name, childPod).catch(() => null);
                             }
                         }
 
@@ -281,8 +272,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                         const execEnabled = settings.execEnabled;
                         const logsAllowed = await services.accounts.canI('logs', 'get', application.spec.project + '/' + application.metadata.name);
                         const execAllowed = await services.accounts.canI('exec', 'create', application.spec.project + '/' + application.metadata.name);
-                        const links = await services.applications.getResourceLinks(application.metadata.name, application.metadata.namespace, selectedNode).catch(() => null);
-                        return {controlledState, liveState, events, podState, execEnabled, execAllowed, logsAllowed, links};
+                        return {controlledState, liveState, events, podState, execEnabled, execAllowed, logsAllowed};
                     }}>
                     {data => (
                         <React.Fragment>
@@ -304,23 +294,11 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                                     onClick={() => appContext.navigation.goto('.', {deploy: AppUtils.nodeKey(selectedNode)}, {replace: true})}
                                     style={{marginLeft: 'auto', marginRight: '5px'}}
                                     className='argo-button argo-button--base'>
-                                    <i className='fa fa-sync-alt' /> <span className='show-for-large'>SYNC</span>
+                                    <i className='fa fa-sync-alt' /> SYNC
                                 </button>
-                                <button
-                                    onClick={() => AppUtils.deletePopup(appContext, selectedNode, application)}
-                                    style={{marginRight: '5px'}}
-                                    className='argo-button argo-button--base'>
-                                    <i className='fa fa-trash' /> <span className='show-for-large'>DELETE</span>
+                                <button onClick={() => AppUtils.deletePopup(appContext, selectedNode, application)} className='argo-button argo-button--base'>
+                                    <i className='fa fa-trash' /> DELETE
                                 </button>
-                                <DropDown
-                                    isMenu={true}
-                                    anchor={() => (
-                                        <button className='argo-button argo-button--light argo-button--lg argo-button--short'>
-                                            <i className='fa fa-ellipsis-v' />
-                                        </button>
-                                    )}>
-                                    {() => AppUtils.renderResourceActionMenu(selectedNode, application, appContext)}
-                                </DropDown>
                             </div>
                             <Tabs
                                 navTransparent={true}
@@ -335,15 +313,7 @@ export const ResourceDetails = (props: ResourceDetailsProps) => {
                                             title: 'SUMMARY',
                                             icon: 'fa fa-file-alt',
                                             key: 'summary',
-                                            content: (
-                                                <ApplicationNodeInfo
-                                                    application={application}
-                                                    live={data.liveState}
-                                                    controlled={data.controlledState}
-                                                    node={selectedNode}
-                                                    links={data.links}
-                                                />
-                                            )
+                                            content: <ApplicationNodeInfo application={application} live={data.liveState} controlled={data.controlledState} node={selectedNode} />
                                         }
                                     ],
                                     data.execEnabled,

@@ -1,39 +1,28 @@
-hs = {
-  status = "Progressing",
-  message = "Update in progress"
-}
-if obj.status ~= nil then
-  if obj.status.conditions ~= nil then
-    for i, condition in ipairs(obj.status.conditions) do
+hs = {}
+hs.status = "Progressing"
+hs.message = "Provisioning IAMPolicyMember..."
 
-      -- Up To Date
-      if condition.reason == "UpToDate" and condition.status == "True" then
-        hs.status = "Healthy"
-        hs.message = condition.message
-        return hs
-      end
+if obj.status == nil or obj.status.conditions == nil then
+  return hs
+end
 
-      -- Update Failed
-      if condition.reason == "UpdateFailed" then
-        hs.status = "Degraded"
-        hs.message = condition.message
-        return hs
-      end
+for i, condition in ipairs(obj.status.conditions) do
+  -- There should be only Ready status
+  if condition.type == "Ready" then
 
-      -- Dependency Not Found
-      if condition.reason == "DependencyNotFound" then
-        hs.status = "Degraded"
-        hs.message = condition.message
-        return hs
-      end
+    hs.message = condition.message
 
-      -- Dependency Not Ready
-      if condition.reason == "DependencyNotReady" then
-        hs.status = "Suspended"
-        hs.message = condition.message
-        return hs
-      end
+    if condition.status == "True" then
+      hs.status = "Healthy"
+      return hs
     end
+
+    if condition.reason == "UpdateFailed" then
+      hs.status = "Degraded"
+      return hs
+    end
+
   end
 end
+
 return hs
