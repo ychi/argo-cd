@@ -21,7 +21,7 @@ const (
 	// ApplicationSet constants
 	ApplicationSetKind      string = "ApplicationSet"
 	ApplicationSetSingular  string = "applicationset"
-	ApplicationSetShortName string = "appset"
 	ApplicationSetPlural    string = "applicationsets"
+	ApplicationSetShortName string = "appset"
 	ApplicationSetFullName  string = ApplicationSetPlural + "." + Group
 )

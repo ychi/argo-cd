@@ -1,43 +1,21 @@
 package cache
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"time"
 
 	ioutil "github.com/argoproj/argo-cd/v2/util/io"
 
-	rediscache "github.com/go-redis/cache/v9"
-	"github.com/redis/go-redis/v9"
+	rediscache "github.com/go-redis/cache/v8"
+	"github.com/go-redis/redis/v8"
 )
 
-type RedisCompressionType string
-
-var (
-	RedisCompressionNone RedisCompressionType = "none"
-	RedisCompressionGZip RedisCompressionType = "gzip"
-)
-
-func CompressionTypeFromString(s string) (RedisCompressionType, error) {
-	switch s {
-	case string(RedisCompressionNone):
-		return RedisCompressionNone, nil
-	case string(RedisCompressionGZip):
-		return RedisCompressionGZip, nil
-	}
-	return "", fmt.Errorf("unknown compression type: %s", s)
-}
-
-func NewRedisCache(client *redis.Client, expiration time.Duration, compressionType RedisCompressionType) CacheClient {
+func NewRedisCache(client *redis.Client, expiration time.Duration) CacheClient {
 	return &redisCache{
-		client:               client,
-		expiration:           expiration,
-		cache:                rediscache.New(&rediscache.Options{Redis: client}),
-		redisCompressionType: compressionType,
+		client:     client,
+		expiration: expiration,
+		cache:      rediscache.New(&rediscache.Options{Redis: client}),
 	}
 }
 
@@ -45,54 +23,9 @@ func NewRedisCache(client *redis.Client, expiration time.Duration, compressionTy
 var _ CacheClient = &redisCache{}
 
 type redisCache struct {
-	expiration           time.Duration
-	client               *redis.Client
-	cache                *rediscache.Cache
-	redisCompressionType RedisCompressionType
-}
-
-func (r *redisCache) getKey(key string) string {
-	switch r.redisCompressionType {
-	case RedisCompressionGZip:
-		return key + ".gz"
-	default:
-		return key
-	}
-}
-
-func (r *redisCache) marshal(obj interface{}) ([]byte, error) {
-	buf := bytes.NewBuffer([]byte{})
-	var w io.Writer = buf
-	if r.redisCompressionType == RedisCompressionGZip {
-		w = gzip.NewWriter(buf)
-	}
-	encoder := json.NewEncoder(w)
-
-	if err := encoder.Encode(obj); err != nil {
-		return nil, err
-	}
-	if flusher, ok := w.(interface{ Flush() error }); ok {
-		if err := flusher.Flush(); err != nil {
-			return nil, err
-		}
-	}
-	return buf.Bytes(), nil
-}
-
-func (r *redisCache) unmarshal(data []byte, obj interface{}) error {
-	buf := bytes.NewReader(data)
-	var reader io.Reader = buf
-	if r.redisCompressionType == RedisCompressionGZip {
-		if gzipReader, err := gzip.NewReader(buf); err != nil {
-			return err
-		} else {
-			reader = gzipReader
-		}
-	}
-	if err := json.NewDecoder(reader).Decode(obj); err != nil {
-		return fmt.Errorf("failed to decode cached data: %w", err)
-	}
-	return nil
+	expiration time.Duration
+	client     *redis.Client
+	cache      *rediscache.Cache
 }
 
 func (r *redisCache) Set(item *Item) error {
@@ -101,13 +34,13 @@ func (r *redisCache) Set(item *Item) error {
 		expiration = r.expiration
 	}
 
-	val, err := r.marshal(item.Object)
+	val, err := json.Marshal(item.Object)
 	if err != nil {
 		return err
 	}
 
 	return r.cache.Set(&rediscache.Item{
-		Key:   r.getKey(item.Key),
+		Key:   item.Key,
 		Value: val,
 		TTL:   expiration,
 	})
@@ -115,18 +48,18 @@ func (r *redisCache) Set(item *Item) error {
 
 func (r *redisCache) Get(key string, obj interface{}) error {
 	var data []byte
-	err := r.cache.Get(context.TODO(), r.getKey(key), &data)
+	err := r.cache.Get(context.TODO(), key, &data)
 	if err == rediscache.ErrCacheMiss {
 		err = ErrCacheMiss
 	}
 	if err != nil {
 		return err
 	}
-	return r.unmarshal(data, obj)
+	return json.Unmarshal(data, obj)
 }
 
 func (r *redisCache) Delete(key string) error {
-	return r.cache.Delete(context.TODO(), r.getKey(key))
+	return r.cache.Delete(context.TODO(), key)
 }
 
 func (r *redisCache) OnUpdated(ctx context.Context, key string, callback func() error) error {
@@ -181,18 +114,6 @@ func (redisHook) BeforeProcessPipeline(ctx context.Context, _ []redis.Cmder) (co
 }
 
 func (redisHook) AfterProcessPipeline(_ context.Context, _ []redis.Cmder) error {
-	return nil
-}
-
-func (redisHook) DialHook(next redis.DialHook) redis.DialHook {
-	return nil
-}
-
-func (redisHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
-	return nil
-}
-
-func (redisHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
 	return nil
 }
 

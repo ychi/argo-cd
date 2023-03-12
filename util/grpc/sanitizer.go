@@ -5,16 +5,13 @@ import (
 	"regexp"
 	"strings"
 
-	"context"
-
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
-type sanitizerKey string
-
 const (
-	contextKey sanitizerKey = "sanitizer"
+	contextKey = "sanitizer"
 )
 
 // ErrorSanitizerUnaryServerInterceptor returns a new unary server interceptor that sanitizes error messages

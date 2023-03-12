@@ -20,8 +20,7 @@ spec:
       - name: argocd-server
         image: quay.io/argoproj/argocd:latest
         imagePullPolicy: Always
-        args:
-          - /usr/local/bin/argocd-server
+        command: [argocd-server]
         env:
         - name: ARGOCD_SERVER_INSECURE
           valueFrom:
@@ -47,7 +46,7 @@ spec:
                 name: argocd-cmd-params-cm
                 key: server.log.format
                 optional: true
-        - name: ARGOCD_SERVER_LOG_LEVEL
+        - name: ARGOCD_REPO_SERVER_LOGLEVEL
           valueFrom:
               configMapKeyRef:
                 name: argocd-cmd-params-cm
@@ -107,18 +106,6 @@ spec:
                 name: argocd-cmd-params-cm
                 key: server.repo.server.strict.tls
                 optional: true
-        - name: ARGOCD_SERVER_DEX_SERVER_PLAINTEXT
-          valueFrom:
-              configMapKeyRef:
-                name: argocd-cmd-params-cm
-                key: server.dex.server.plaintext
-                optional: true
-        - name: ARGOCD_SERVER_DEX_SERVER_STRICT_TLS
-          valueFrom:
-              configMapKeyRef:
-                name: argocd-cmd-params-cm
-                key: server.dex.server.strict.tls
-                optional: true
         - name: ARGOCD_TLS_MIN_VERSION
           valueFrom:
               configMapKeyRef:
@@ -173,12 +160,6 @@ spec:
                 name: argocd-cmd-params-cm
                 key: redis.server
                 optional: true
-        - name: REDIS_COMPRESSION
-          valueFrom:
-            configMapKeyRef:
-              name: argocd-cmd-params-cm
-              key: redis.compression
-              optional: true
         - name: REDISDB
           valueFrom:
               configMapKeyRef:
@@ -203,18 +184,6 @@ spec:
                 name: argocd-cmd-params-cm
                 key: otlp.address
                 optional: true
-        - name: ARGOCD_APPLICATION_NAMESPACES
-          valueFrom:
-              configMapKeyRef:
-                name: argocd-cmd-params-cm
-                key: application.namespaces
-                optional: true
-        - name: ARGOCD_SERVER_ENABLE_PROXY_EXTENSION
-          valueFrom:
-              configMapKeyRef:
-                name: argocd-cmd-params-cm
-                key: server.enable.proxy.extension
-                optional: true
         volumeMounts:
         - name: ssh-known-hosts
           mountPath: /app/config/ssh
@@ -222,8 +191,6 @@ spec:
           mountPath: /app/config/tls
         - name: argocd-repo-server-tls
           mountPath: /app/config/server/tls
-        - name: argocd-dex-server-tls
-          mountPath: /app/config/dex/tls
         - mountPath: /home/argocd
           name: plugins-home
         - mountPath: /tmp
@@ -237,7 +204,6 @@ spec:
             port: 8080
           initialDelaySeconds: 3
           periodSeconds: 30
-          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /healthz
@@ -250,9 +216,7 @@ spec:
           runAsNonRoot: true
           capabilities:
             drop:
-            - ALL
-          seccompProfile:
-            type: RuntimeDefault
+              - all
       volumes:
       - emptyDir: {}
         name: plugins-home
@@ -273,15 +237,6 @@ spec:
             path: tls.crt
           - key: tls.key
             path: tls.key
-          - key: ca.crt
-            path: ca.crt
-      - name: argocd-dex-server-tls
-        secret:
-          secretName: argocd-dex-server-tls
-          optional: true
-          items:
-          - key: tls.crt
-            path: tls.crt
           - key: ca.crt
             path: ca.crt
       affinity:
