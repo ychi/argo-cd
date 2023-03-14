@@ -18,8 +18,8 @@ spec:
         app.kubernetes.io/name: argocd-application-controller
     spec:
       containers:
-      - args:
-        - /usr/local/bin/argocd-application-controller
+      - command:
+        - argocd-application-controller
         env:
         - name: ARGOCD_CONTROLLER_REPLICAS
           value: "1"
@@ -95,12 +95,6 @@ spec:
                 name: argocd-cmd-params-cm
                 key: controller.repo.server.strict.tls
                 optional: true
-        - name: ARGOCD_APPLICATION_CONTROLLER_PERSIST_RESOURCE_HEALTH
-          valueFrom:
-            configMapKeyRef:
-              name: argocd-cmd-params-cm
-              key: controller.resource.health.persist
-              optional: true
         - name: ARGOCD_APP_STATE_CACHE_EXPIRATION
           valueFrom:
               configMapKeyRef:
@@ -113,12 +107,6 @@ spec:
                 name: argocd-cmd-params-cm
                 key: redis.server
                 optional: true
-        - name: REDIS_COMPRESSION
-          valueFrom:
-            configMapKeyRef:
-              name: argocd-cmd-params-cm
-              key: redis.compression
-              optional: true
         - name: REDISDB
           valueFrom:
               configMapKeyRef:
@@ -137,12 +125,6 @@ spec:
                 name: argocd-cmd-params-cm
                 key: otlp.address
                 optional: true
-        - name: ARGOCD_APPLICATION_NAMESPACES
-          valueFrom:
-              configMapKeyRef:
-                name: argocd-cmd-params-cm
-                key: application.namespaces
-                optional: true
         image: quay.io/argoproj/argocd:latest
         imagePullPolicy: Always
         name: argocd-application-controller
@@ -154,15 +136,19 @@ spec:
             port: 8082
           initialDelaySeconds: 5
           periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8082
+          initialDelaySeconds: 5
+          periodSeconds: 10
         securityContext:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
-            - ALL
-          seccompProfile:
-            type: RuntimeDefault
+              - all
         workingDir: /home/argocd
         volumeMounts:
         - name: argocd-repo-server-tls

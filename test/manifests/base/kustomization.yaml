@@ -5,7 +5,6 @@ bases:
 - ../../../manifests/crds
 - ../../../manifests/base/config
 - ../../../manifests/cluster-rbac
-- ../../../manifests/base/notification
 
 patchesStrategicMerge:
   - patches.yaml
