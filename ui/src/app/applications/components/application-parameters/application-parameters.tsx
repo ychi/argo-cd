@@ -4,13 +4,11 @@ import {FieldApi, FormApi, FormField as ReactFormField, Text, TextArea} from 're
 
 import {ArrayInputField, CheckboxField, EditablePanel, EditablePanelItem, Expandable, TagsInputField} from '../../../shared/components';
 import * as models from '../../../shared/models';
-import {ApplicationSourceDirectory, Plugin} from '../../../shared/models';
+import {ApplicationSourceDirectory, AuthSettings} from '../../../shared/models';
 import {services} from '../../../shared/services';
 import {ImageTagFieldEditor} from './kustomize';
 import * as kustomize from './kustomize-image';
 import {VarsInputField} from './vars-input-field';
-import {concatMaps} from '../../../shared/utils';
-import {getAppDefaultSource} from '../utils';
 
 const TextWithMetadataField = ReactFormField((props: {metadata: {value: string}; fieldApi: FieldApi; className: string}) => {
     const {
@@ -113,7 +111,7 @@ export const ApplicationParameters = (props: {
     noReadonlyMode?: boolean;
 }) => {
     const app = props.application;
-    const source = getAppDefaultSource(app);
+    const source = props.application.spec.source;
     const [removedOverrides, setRemovedOverrides] = React.useState(new Array<boolean>());
 
     let attributes: EditablePanelItem[] = [];
@@ -121,7 +119,7 @@ export const ApplicationParameters = (props: {
     if (props.details.type === 'Kustomize' && props.details.kustomize) {
         attributes.push({
             title: 'VERSION',
-            view: (source.kustomize && source.kustomize.version) || <span>default</span>,
+            view: (app.spec.source.kustomize && app.spec.source.kustomize.version) || <span>default</span>,
             edit: (formApi: FormApi) => (
                 <DataLoader load={() => services.authService.settings()}>
                     {settings =>
@@ -135,20 +133,14 @@ export const ApplicationParameters = (props: {
 
         attributes.push({
             title: 'NAME PREFIX',
-            view: source.kustomize && source.kustomize.namePrefix,
+            view: app.spec.source.kustomize && app.spec.source.kustomize.namePrefix,
             edit: (formApi: FormApi) => <FormField formApi={formApi} field='spec.source.kustomize.namePrefix' component={Text} />
         });
 
         attributes.push({
             title: 'NAME SUFFIX',
-            view: source.kustomize && source.kustomize.nameSuffix,
+            view: app.spec.source.kustomize && app.spec.source.kustomize.nameSuffix,
             edit: (formApi: FormApi) => <FormField formApi={formApi} field='spec.source.kustomize.nameSuffix' component={Text} />
-        });
-
-        attributes.push({
-            title: 'NAMESPACE',
-            view: app.spec.source.kustomize && app.spec.source.kustomize.namespace,
-            edit: (formApi: FormApi) => <FormField formApi={formApi} field='spec.source.kustomize.namespace' component={Text} />
         });
 
         const srcImages = ((props.details && props.details.kustomize && props.details.kustomize.images) || []).map(val => kustomize.parse(val));
@@ -185,7 +177,7 @@ export const ApplicationParameters = (props: {
     } else if (props.details.type === 'Helm' && props.details.helm) {
         attributes.push({
             title: 'VALUES FILES',
-            view: (source.helm && (source.helm.valueFiles || []).join(', ')) || 'No values files selected',
+            view: (app.spec.source.helm && (app.spec.source.helm.valueFiles || []).join(', ')) || 'No values files selected',
             edit: (formApi: FormApi) => (
                 <FormField
                     formApi={formApi}
@@ -200,9 +192,9 @@ export const ApplicationParameters = (props: {
         });
         attributes.push({
             title: 'VALUES',
-            view: source.helm && (
+            view: app.spec.source.helm && (
                 <Expandable>
-                    <pre>{source.helm.values}</pre>
+                    <pre>{app.spec.source.helm.values}</pre>
                 </Expandable>
             ),
             edit: (formApi: FormApi) => (
@@ -262,52 +254,22 @@ export const ApplicationParameters = (props: {
     } else if (props.details.type === 'Plugin') {
         attributes.push({
             title: 'NAME',
-            view: source.plugin && source.plugin.name,
+            view: app.spec.source.plugin && app.spec.source.plugin.name,
             edit: (formApi: FormApi) => (
-                <DataLoader load={() => services.authService.plugins()}>
-                    {(plugins: Plugin[]) => (
-                        <FormField formApi={formApi} field='spec.source.plugin.name' component={FormSelect} componentProps={{options: plugins.map(p => p.name)}} />
+                <DataLoader load={() => services.authService.settings()}>
+                    {(settings: AuthSettings) => (
+                        <FormField formApi={formApi} field='spec.source.plugin.name' component={FormSelect} componentProps={{options: (settings.plugins || []).map(p => p.name)}} />
                     )}
                 </DataLoader>
             )
         });
         attributes.push({
             title: 'ENV',
-            view: source.plugin && (source.plugin.env || []).map(i => `${i.name}='${i.value}'`).join(' '),
+            view: app.spec.source.plugin && (app.spec.source.plugin.env || []).map(i => `${i.name}='${i.value}'`).join(' '),
             edit: (formApi: FormApi) => <FormField field='spec.source.plugin.env' formApi={formApi} component={ArrayInputField} />
         });
-        if (props.details.plugin.parametersAnnouncement) {
-            for (const announcement of props.details.plugin.parametersAnnouncement) {
-                const liveParam = app.spec.source.plugin.parameters?.find(param => param.name === announcement.name);
-                if (announcement.collectionType === undefined || announcement.collectionType === '' || announcement.collectionType === 'string') {
-                    attributes.push({
-                        title: announcement.title ?? announcement.name,
-                        view: liveParam?.string || announcement.string,
-                        edit: () => liveParam?.string || announcement.string
-                    });
-                } else if (announcement.collectionType === 'array') {
-                    attributes.push({
-                        title: announcement.title ?? announcement.name,
-                        view: (liveParam?.array || announcement.array || []).join(' '),
-                        edit: () => (liveParam?.array || announcement.array || []).join(' ')
-                    });
-                } else if (announcement.collectionType === 'map') {
-                    const entries = concatMaps(announcement.map, liveParam?.map).entries();
-                    attributes.push({
-                        title: announcement.title ?? announcement.name,
-                        view: Array.from(entries)
-                            .map(([key, value]) => `${key}='${value}'`)
-                            .join(' '),
-                        edit: () =>
-                            Array.from(entries)
-                                .map(([key, value]) => `${key}='${value}'`)
-                                .join(' ')
-                    });
-                }
-            }
-        }
     } else if (props.details.type === 'Directory') {
-        const directory = source.directory || ({} as ApplicationSourceDirectory);
+        const directory = app.spec.source.directory || ({} as ApplicationSourceDirectory);
         attributes.push({
             title: 'DIRECTORY RECURSE',
             view: (!!directory.recurse).toString(),
@@ -315,7 +277,7 @@ export const ApplicationParameters = (props: {
         });
         attributes.push({
             title: 'TOP-LEVEL ARGUMENTS',
-            view: ((directory?.jsonnet && directory?.jsonnet.tlas) || []).map((i, j) => (
+            view: ((directory.jsonnet && directory.jsonnet.tlas) || []).map((i, j) => (
                 <label key={j}>
                     {i.name}='{i.value}' {i.code && 'code'}
                 </label>
@@ -331,18 +293,6 @@ export const ApplicationParameters = (props: {
             )),
             edit: (formApi: FormApi) => <FormField field='spec.source.directory.jsonnet.extVars' formApi={formApi} component={VarsInputField} />
         });
-
-        attributes.push({
-            title: 'INCLUDE',
-            view: directory && directory.include,
-            edit: (formApi: FormApi) => <FormField formApi={formApi} field='spec.source.directory.include' component={Text} />
-        });
-
-        attributes.push({
-            title: 'EXCLUDE',
-            view: directory && directory.exclude,
-            edit: (formApi: FormApi) => <FormField formApi={formApi} field='spec.source.directory.exclude' component={Text} />
-        });
     }
 
     return (
@@ -350,7 +300,6 @@ export const ApplicationParameters = (props: {
             save={
                 props.save &&
                 (async (input: models.Application) => {
-                    const src = getAppDefaultSource(input);
                     function isDefined(item: any) {
                         return item !== null && item !== undefined;
                     }
@@ -358,11 +307,11 @@ export const ApplicationParameters = (props: {
                         return item !== null && item !== undefined && item.match(/:/);
                     }
 
-                    if (src.helm && src.helm.parameters) {
-                        src.helm.parameters = src.helm.parameters.filter(isDefined);
+                    if (input.spec.source.helm && input.spec.source.helm.parameters) {
+                        input.spec.source.helm.parameters = input.spec.source.helm.parameters.filter(isDefined);
                     }
-                    if (src.kustomize && src.kustomize.images) {
-                        src.kustomize.images = src.kustomize.images.filter(isDefinedWithVersion);
+                    if (input.spec.source.kustomize && input.spec.source.kustomize.images) {
+                        input.spec.source.kustomize.images = input.spec.source.kustomize.images.filter(isDefinedWithVersion);
                     }
                     await props.save(input, {});
                     setRemovedOverrides(new Array<boolean>());
@@ -382,7 +331,6 @@ export const ApplicationParameters = (props: {
             title={props.details.type.toLocaleUpperCase()}
             items={attributes}
             noReadonlyMode={props.noReadonlyMode}
-            hasMultipleSources={app.spec.sources && app.spec.sources.length > 0}
         />
     );
 };
