@@ -18,8 +18,8 @@ spec:
         app.kubernetes.io/name: argocd-application-controller
     spec:
       containers:
-      - args:
-        - /usr/local/bin/argocd-application-controller
+      - command:
+        - argocd-application-controller
         env:
         - name: ARGOCD_CONTROLLER_REPLICAS
           value: "1"
