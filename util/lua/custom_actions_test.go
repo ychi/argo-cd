@@ -2,6 +2,7 @@ package lua
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +48,7 @@ func TestLuaResourceActionsScript(t *testing.T) {
 		assert.NoError(t, err)
 		dir := filepath.Dir(path)
 		//TODO: Change to path
-		yamlBytes, err := os.ReadFile(dir + "/action_test.yaml")
+		yamlBytes, err := ioutil.ReadFile(dir + "/action_test.yaml")
 		assert.NoError(t, err)
 		var resourceTest ActionTestStructure
 		err = yaml.Unmarshal(yamlBytes, &resourceTest)

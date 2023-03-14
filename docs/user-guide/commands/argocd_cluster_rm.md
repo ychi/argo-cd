@@ -17,7 +17,6 @@ argocd cluster rm cluster-name
 
 ```
   -h, --help   help for rm
-  -y, --yes    Turn off prompting to confirm remove of cluster resources
 ```
 
 ### Options inherited from parent commands
