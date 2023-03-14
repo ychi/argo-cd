@@ -1,10 +1,10 @@
-ARG BASE_IMAGE=docker.io/library/ubuntu:22.04@sha256:9a0bdde4188b896a372804be2384015e90e3f84906b750c1a53539b585fbbe7f
+ARG BASE_IMAGE=docker.io/library/ubuntu:22.04
 ####################################################################################################
 # Builder image
 # Initial stage which pulls prepares build dependencies and CLI tooling we need for our final image
 # Also used as the image in CI jobs so needs all dependencies
 ####################################################################################################
-FROM docker.io/library/golang:1.19.6@sha256:7ce31d15a3a4dbf20446cccffa4020d3a2974ad2287d96123f55caf22c7adb71 AS builder
+FROM docker.io/library/golang:1.18 AS builder
 
 RUN echo 'deb http://deb.debian.org/debian buster-backports main' >> /etc/apt/sources.list
 
@@ -36,15 +36,12 @@ RUN ./install.sh helm-linux && \
 ####################################################################################################
 FROM $BASE_IMAGE AS argocd-base
 
-LABEL org.opencontainers.image.source="https://github.com/argoproj/argo-cd"
-
 USER root
 
-ENV ARGOCD_USER_ID=999
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN groupadd -g $ARGOCD_USER_ID argocd && \
-    useradd -r -u $ARGOCD_USER_ID -g argocd argocd && \
+RUN groupadd -g 999 argocd && \
+    useradd -r -u 999 -g argocd argocd && \
     mkdir -p /home/argocd && \
     chown argocd:0 /home/argocd && \
     chmod g=u /home/argocd && \
@@ -77,13 +74,13 @@ RUN mkdir -p tls && \
 
 ENV USER=argocd
 
-USER $ARGOCD_USER_ID
+USER 999
 WORKDIR /home/argocd
 
 ####################################################################################################
 # Argo CD UI stage
 ####################################################################################################
-FROM --platform=$BUILDPLATFORM docker.io/library/node:12.18.4@sha256:8cfe7e8dc60095a4f9d25a3f0f208503559fa033a15e2ddd87dee85bec101a2e AS argocd-ui
+FROM --platform=$BUILDPLATFORM docker.io/library/node:12.18.4 AS argocd-ui
 
 WORKDIR /src
 COPY ["ui/package.json", "ui/yarn.lock", "./"]
@@ -101,7 +98,7 @@ RUN HOST_ARCH=$TARGETARCH NODE_ENV='production' NODE_ONLINE_ENV='online' NODE_OP
 ####################################################################################################
 # Argo CD Build stage which performs the actual build of Argo CD binaries
 ####################################################################################################
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.19.6@sha256:7ce31d15a3a4dbf20446cccffa4020d3a2974ad2287d96123f55caf22c7adb71 AS argocd-build
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.18 AS argocd-build
 
 WORKDIR /go/src/github.com/argoproj/argo-cd
 
@@ -131,5 +128,4 @@ RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-server && \
     ln -s /usr/local/bin/argocd /usr/local/bin/argocd-applicationset-controller && \
     ln -s /usr/local/bin/argocd /usr/local/bin/argocd-k8s-auth
 
-USER $ARGOCD_USER_ID
-ENTRYPOINT ["/usr/bin/tini", "--"]
+USER 999

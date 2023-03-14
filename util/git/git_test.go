@@ -2,7 +2,7 @@ package git
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,7 +10,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/argoproj/argo-cd/v2/common"
 	"github.com/argoproj/argo-cd/v2/test/fixture/log"
 	"github.com/argoproj/argo-cd/v2/test/fixture/path"
 	"github.com/argoproj/argo-cd/v2/test/fixture/test"
@@ -138,28 +137,28 @@ func TestCustomHTTPClient(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEqual(t, "", keyFile)
 
-	certData, err := os.ReadFile(certFile)
+	certData, err := ioutil.ReadFile(certFile)
 	assert.NoError(t, err)
 	assert.NotEqual(t, "", string(certData))
 
-	keyData, err := os.ReadFile(keyFile)
+	keyData, err := ioutil.ReadFile(keyFile)
 	assert.NoError(t, err)
 	assert.NotEqual(t, "", string(keyData))
 
 	// Get HTTPSCreds with client cert creds specified, and insecure connection
-	creds := NewHTTPSCreds("test", "test", string(certData), string(keyData), false, "http://proxy:5000", &NoopCredsStore{}, false)
+	creds := NewHTTPSCreds("test", "test", string(certData), string(keyData), false, "http://proxy:5000", &NoopCredsStore{})
 	client := GetRepoHTTPClient("https://localhost:9443/foo/bar", false, creds, "http://proxy:5000")
 	assert.NotNil(t, client)
 	assert.NotNil(t, client.Transport)
 	if client.Transport != nil {
-		transport := client.Transport.(*http.Transport)
-		assert.NotNil(t, transport.TLSClientConfig)
-		assert.Equal(t, true, transport.DisableKeepAlives)
-		assert.Equal(t, false, transport.TLSClientConfig.InsecureSkipVerify)
-		assert.NotNil(t, transport.TLSClientConfig.GetClientCertificate)
-		assert.Nil(t, transport.TLSClientConfig.RootCAs)
-		if transport.TLSClientConfig.GetClientCertificate != nil {
-			cert, err := transport.TLSClientConfig.GetClientCertificate(nil)
+		httpClient := client.Transport.(*http.Transport)
+		assert.NotNil(t, httpClient.TLSClientConfig)
+
+		assert.Equal(t, false, httpClient.TLSClientConfig.InsecureSkipVerify)
+
+		assert.NotNil(t, httpClient.TLSClientConfig.GetClientCertificate)
+		if httpClient.TLSClientConfig.GetClientCertificate != nil {
+			cert, err := httpClient.TLSClientConfig.GetClientCertificate(nil)
 			assert.NoError(t, err)
 			if err == nil {
 				assert.NotNil(t, cert)
@@ -167,7 +166,7 @@ func TestCustomHTTPClient(t *testing.T) {
 				assert.NotNil(t, cert.PrivateKey)
 			}
 		}
-		proxy, err := transport.Proxy(nil)
+		proxy, err := httpClient.Proxy(nil)
 		assert.Nil(t, err)
 		assert.Equal(t, "http://proxy:5000", proxy.String())
 	}
@@ -178,19 +177,19 @@ func TestCustomHTTPClient(t *testing.T) {
 	}()
 
 	// Get HTTPSCreds without client cert creds, but insecure connection
-	creds = NewHTTPSCreds("test", "test", "", "", true, "", &NoopCredsStore{}, false)
+	creds = NewHTTPSCreds("test", "test", "", "", true, "", &NoopCredsStore{})
 	client = GetRepoHTTPClient("https://localhost:9443/foo/bar", true, creds, "")
 	assert.NotNil(t, client)
 	assert.NotNil(t, client.Transport)
 	if client.Transport != nil {
-		transport := client.Transport.(*http.Transport)
-		assert.NotNil(t, transport.TLSClientConfig)
-		assert.Equal(t, true, transport.DisableKeepAlives)
-		assert.Equal(t, true, transport.TLSClientConfig.InsecureSkipVerify)
-		assert.NotNil(t, transport.TLSClientConfig.GetClientCertificate)
-		assert.Nil(t, transport.TLSClientConfig.RootCAs)
-		if transport.TLSClientConfig.GetClientCertificate != nil {
-			cert, err := transport.TLSClientConfig.GetClientCertificate(nil)
+		httpClient := client.Transport.(*http.Transport)
+		assert.NotNil(t, httpClient.TLSClientConfig)
+
+		assert.Equal(t, true, httpClient.TLSClientConfig.InsecureSkipVerify)
+
+		assert.NotNil(t, httpClient.TLSClientConfig.GetClientCertificate)
+		if httpClient.TLSClientConfig.GetClientCertificate != nil {
+			cert, err := httpClient.TLSClientConfig.GetClientCertificate(nil)
 			assert.NoError(t, err)
 			if err == nil {
 				assert.NotNil(t, cert)
@@ -198,29 +197,11 @@ func TestCustomHTTPClient(t *testing.T) {
 				assert.Nil(t, cert.PrivateKey)
 			}
 		}
-		req, err := http.NewRequest(http.MethodGet, "http://proxy-from-env:7878", nil)
+		req, err := http.NewRequest("GET", "http://proxy-from-env:7878", nil)
 		assert.Nil(t, err)
-		proxy, err := transport.Proxy(req)
+		proxy, err := httpClient.Proxy(req)
 		assert.Nil(t, err)
 		assert.Equal(t, "http://proxy-from-env:7878", proxy.String())
-	}
-	// GetRepoHTTPClient with root ca
-	cert, err := os.ReadFile("../../test/fixture/certs/argocd-test-server.crt")
-	assert.NoError(t, err)
-	temppath := t.TempDir()
-	defer os.RemoveAll(temppath)
-	err = os.WriteFile(filepath.Join(temppath, "127.0.0.1"), cert, 0666)
-	assert.NoError(t, err)
-	os.Setenv(common.EnvVarTLSDataPath, temppath)
-	client = GetRepoHTTPClient("https://127.0.0.1", false, creds, "")
-	assert.NotNil(t, client)
-	assert.NotNil(t, client.Transport)
-	if client.Transport != nil {
-		transport := client.Transport.(*http.Transport)
-		assert.NotNil(t, transport.TLSClientConfig)
-		assert.Equal(t, true, transport.DisableKeepAlives)
-		assert.Equal(t, false, transport.TLSClientConfig.InsecureSkipVerify)
-		assert.NotNil(t, transport.TLSClientConfig.RootCAs)
 	}
 }
 
@@ -289,12 +270,8 @@ func TestLFSClient(t *testing.T) {
 	fileHandle, err := os.Open(fmt.Sprintf("%s/test3.yaml", tempDir))
 	assert.NoError(t, err)
 	if err == nil {
-		defer func() {
-			if err = fileHandle.Close(); err != nil {
-				assert.NoError(t, err)
-			}
-		}()
-		text, err := io.ReadAll(fileHandle)
+		defer fileHandle.Close()
+		text, err := ioutil.ReadAll(fileHandle)
 		assert.NoError(t, err)
 		if err == nil {
 			assert.Equal(t, "This is not a YAML, sorry.\n", string(text))

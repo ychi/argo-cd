@@ -29,8 +29,8 @@ spec:
             - key: ca.crt
               path: ca.crt
       containers:
-        - args:
-            - /usr/local/bin/argocd-notifications
+        - command:
+            - argocd-notifications
           workingDir: /app
           livenessProbe:
             tcpSocket:
@@ -48,9 +48,7 @@ spec:
               drop:
               - ALL
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: true 
       serviceAccountName: argocd-notifications-controller
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
+          runAsNonRoot: true

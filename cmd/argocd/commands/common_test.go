@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"io"
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -59,7 +59,7 @@ func captureOutput(f func() error) (string, error) {
 		os.Stdout = stdout
 		return "", err
 	}
-	str, err := io.ReadAll(r)
+	str, err := ioutil.ReadAll(r)
 	os.Stdout = stdout
 	if err != nil {
 		return "", err

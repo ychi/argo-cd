@@ -44,7 +44,6 @@ func NewAccountCommand(clientOpts *argocdclient.ClientOptions) *cobra.Command {
 	command.AddCommand(NewAccountGenerateTokenCommand(clientOpts))
 	command.AddCommand(NewAccountGetCommand(clientOpts))
 	command.AddCommand(NewAccountDeleteTokenCommand(clientOpts))
-	command.AddCommand(NewBcryptCmd())
 	return command
 }
 
@@ -70,8 +69,6 @@ has appropriate RBAC permissions to change other accounts.
 	argocd account update-password --account foobar
 `,
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
-
 			if len(args) != 0 {
 				c.HelpFunc()(c, args)
 				os.Exit(1)
@@ -80,7 +77,7 @@ has appropriate RBAC permissions to change other accounts.
 			conn, usrIf := acdClient.NewAccountClientOrDie()
 			defer io.Close(conn)
 
-			userInfo := getCurrentAccount(ctx, acdClient)
+			userInfo := getCurrentAccount(acdClient)
 
 			if userInfo.Iss == sessionutil.SessionManagerClaimsIssuer && currentPassword == "" {
 				fmt.Printf("*** Enter password of currently logged in user (%s): ", userInfo.Username)
@@ -106,6 +103,7 @@ has appropriate RBAC permissions to change other accounts.
 				Name:            account,
 			}
 
+			ctx := context.Background()
 			_, err := usrIf.UpdatePassword(ctx, &updatePasswordRequest)
 			errors.CheckError(err)
 			fmt.Printf("Password updated\n")
@@ -118,7 +116,7 @@ has appropriate RBAC permissions to change other accounts.
 				errors.CheckError(err)
 				claims, err := configCtx.User.Claims()
 				errors.CheckError(err)
-				tokenString := passwordLogin(ctx, acdClient, localconfig.GetUsername(claims.Subject), newPassword)
+				tokenString := passwordLogin(acdClient, localconfig.GetUsername(claims.Subject), newPassword)
 				localCfg.UpsertUser(localconfig.User{
 					Name:      localCfg.CurrentContext,
 					AuthToken: tokenString,
@@ -144,8 +142,6 @@ func NewAccountGetUserInfoCommand(clientOpts *argocdclient.ClientOptions) *cobra
 		Use:   "get-user-info",
 		Short: "Get user info",
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
-
 			if len(args) != 0 {
 				c.HelpFunc()(c, args)
 				os.Exit(1)
@@ -154,6 +150,7 @@ func NewAccountGetUserInfoCommand(clientOpts *argocdclient.ClientOptions) *cobra
 			conn, client := headless.NewClientOrDie(clientOpts, c).NewSessionClientOrDie()
 			defer io.Close(conn)
 
+			ctx := context.Background()
 			response, err := client.GetUserInfo(ctx, &session.GetUserInfoRequest{})
 			errors.CheckError(err)
 
@@ -200,8 +197,6 @@ Actions: %v
 Resources: %v
 `, rbacpolicy.Actions, rbacpolicy.Resources),
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
-
 			if len(args) != 3 {
 				c.HelpFunc()(c, args)
 				os.Exit(1)
@@ -210,6 +205,7 @@ Resources: %v
 			conn, client := headless.NewClientOrDie(clientOpts, c).NewAccountClientOrDie()
 			defer io.Close(conn)
 
+			ctx := context.Background()
 			response, err := client.CanI(ctx, &accountpkg.CanIRequest{
 				Action:      args[0],
 				Resource:    args[1],
@@ -245,11 +241,11 @@ func NewAccountListCommand(clientOpts *argocdclient.ClientOptions) *cobra.Comman
 		Short:   "List accounts",
 		Example: "argocd account list",
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
 
 			conn, client := headless.NewClientOrDie(clientOpts, c).NewAccountClientOrDie()
 			defer io.Close(conn)
 
+			ctx := context.Background()
 			response, err := client.ListAccounts(ctx, &accountpkg.ListAccountRequest{})
 
 			errors.CheckError(err)
@@ -270,10 +266,10 @@ func NewAccountListCommand(clientOpts *argocdclient.ClientOptions) *cobra.Comman
 	return cmd
 }
 
-func getCurrentAccount(ctx context.Context, clientset argocdclient.Client) session.GetUserInfoResponse {
+func getCurrentAccount(clientset argocdclient.Client) session.GetUserInfoResponse {
 	conn, client := clientset.NewSessionClientOrDie()
 	defer io.Close(conn)
-	userInfo, err := client.GetUserInfo(ctx, &session.GetUserInfoRequest{})
+	userInfo, err := client.GetUserInfo(context.Background(), &session.GetUserInfoRequest{})
 	errors.CheckError(err)
 	return *userInfo
 }
@@ -292,18 +288,16 @@ argocd account get
 # Get details for an account by name
 argocd account get --account <account-name>`,
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
-
 			clientset := headless.NewClientOrDie(clientOpts, c)
 
 			if account == "" {
-				account = getCurrentAccount(ctx, clientset).Username
+				account = getCurrentAccount(clientset).Username
 			}
 
 			conn, client := clientset.NewAccountClientOrDie()
 			defer io.Close(conn)
 
-			acc, err := client.GetAccount(ctx, &accountpkg.GetAccountRequest{Name: account})
+			acc, err := client.GetAccount(context.Background(), &accountpkg.GetAccountRequest{Name: account})
 
 			errors.CheckError(err)
 			switch output {
@@ -365,17 +359,16 @@ argocd account generate-token
 # Generate token for the account with the specified name
 argocd account generate-token --account <account-name>`,
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
 
 			clientset := headless.NewClientOrDie(clientOpts, c)
 			conn, client := clientset.NewAccountClientOrDie()
 			defer io.Close(conn)
 			if account == "" {
-				account = getCurrentAccount(ctx, clientset).Username
+				account = getCurrentAccount(clientset).Username
 			}
 			expiresIn, err := timeutil.ParseDuration(expiresIn)
 			errors.CheckError(err)
-			response, err := client.CreateToken(ctx, &accountpkg.CreateTokenRequest{
+			response, err := client.CreateToken(context.Background(), &accountpkg.CreateTokenRequest{
 				Name:      account,
 				ExpiresIn: int64(expiresIn.Seconds()),
 				Id:        id,
@@ -403,8 +396,6 @@ argocd account delete-token ID
 # Delete token of the account with the specified name
 argocd account delete-token --account <account-name> ID`,
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
-
 			if len(args) != 1 {
 				c.HelpFunc()(c, args)
 				os.Exit(1)
@@ -415,9 +406,9 @@ argocd account delete-token --account <account-name> ID`,
 			conn, client := clientset.NewAccountClientOrDie()
 			defer io.Close(conn)
 			if account == "" {
-				account = getCurrentAccount(ctx, clientset).Username
+				account = getCurrentAccount(clientset).Username
 			}
-			_, err := client.DeleteToken(ctx, &accountpkg.DeleteTokenRequest{Name: account, Id: id})
+			_, err := client.DeleteToken(context.Background(), &accountpkg.DeleteTokenRequest{Name: account, Id: id})
 			errors.CheckError(err)
 		},
 	}

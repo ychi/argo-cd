@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/coreos/go-oidc"
 	"github.com/golang-jwt/jwt/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/skratchdot/open-golang/open"
@@ -56,8 +56,6 @@ argocd login cd.argoproj.io --sso
 # Configure direct access using Kubernetes API server
 argocd login cd.argoproj.io --core`,
 		Run: func(c *cobra.Command, args []string) {
-			ctx := c.Context()
-
 			var server string
 
 			if len(args) != 1 && !globalClientOpts.PortForward && !globalClientOpts.Core {
@@ -124,8 +122,9 @@ argocd login cd.argoproj.io --core`,
 				setConn, setIf := acdClient.NewSettingsClientOrDie()
 				defer io.Close(setConn)
 				if !sso {
-					tokenString = passwordLogin(ctx, acdClient, username, password)
+					tokenString = passwordLogin(acdClient, username, password)
 				} else {
+					ctx := context.Background()
 					httpClient, err := acdClient.HTTPClient()
 					errors.CheckError(err)
 					ctx = oidc.ClientContext(ctx, httpClient)
@@ -345,7 +344,7 @@ func oauth2Login(
 	return tokenString, refreshToken
 }
 
-func passwordLogin(ctx context.Context, acdClient argocdclient.Client, username, password string) string {
+func passwordLogin(acdClient argocdclient.Client, username, password string) string {
 	username, password = cli.PromptCredentials(username, password)
 	sessConn, sessionIf := acdClient.NewSessionClientOrDie()
 	defer io.Close(sessConn)
@@ -353,7 +352,7 @@ func passwordLogin(ctx context.Context, acdClient argocdclient.Client, username,
 		Username: username,
 		Password: password,
 	}
-	createdSession, err := sessionIf.Create(ctx, &sessionRequest)
+	createdSession, err := sessionIf.Create(context.Background(), &sessionRequest)
 	errors.CheckError(err)
 	return createdSession.Token
 }

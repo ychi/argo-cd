@@ -14,17 +14,14 @@ function toOption(label: string) {
     return {label};
 }
 
-export interface FiltersProps {
+export const Filters = (props: {
     children?: React.ReactNode;
     pref: AppDetailsPreferences;
     tree: ApplicationTree;
     resourceNodes: models.ResourceStatus[];
     onSetFilter: (items: string[]) => void;
     onClearFilter: () => void;
-    collapsed?: boolean;
-}
-
-export const Filters = (props: FiltersProps) => {
+}) => {
     const ctx = React.useContext(Context);
 
     const {pref, tree, onSetFilter} = props;
@@ -33,6 +30,9 @@ export const Filters = (props: FiltersProps) => {
         setLoading(true);
         props.onClearFilter();
     };
+
+    const shown = pref.hideFilters;
+    const setShown = (val: boolean) => services.viewPreferences.updatePreferences({appDetails: {...pref, hideFilters: val}});
 
     const resourceFilter = pref.resourceFilter || [];
     const removePrefix = (prefix: string) => (v: string) => v.replace(prefix + ':', '');
@@ -121,7 +121,7 @@ export const Filters = (props: FiltersProps) => {
     };
 
     return (
-        <FiltersGroup content={props.children} appliedFilter={pref.resourceFilter} onClearFilter={onClearFilter} collapsed={props.collapsed}>
+        <FiltersGroup content={props.children} appliedFilter={pref.resourceFilter} onClearFilter={onClearFilter} setShown={setShown} expanded={shown}>
             {ResourceFilter({label: 'NAME', prefix: 'name', options: names.map(toOption), field: true})}
             {ResourceFilter({
                 label: 'KINDS',
