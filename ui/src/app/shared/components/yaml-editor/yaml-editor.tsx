@@ -14,7 +14,6 @@ export class YamlEditor<T> extends React.Component<
         input: T;
         hideModeButtons?: boolean;
         initialEditMode?: boolean;
-        vScrollbar?: boolean;
         onSave?: (patch: string, patchType: string) => Promise<any>;
         onCancel?: () => any;
         minHeight?: number;
@@ -95,7 +94,6 @@ export class YamlEditor<T> extends React.Component<
                 )}
                 <MonacoEditor
                     minHeight={props.minHeight}
-                    vScrollBar={props.vScrollbar}
                     editor={{
                         input: {text: yaml, language: 'yaml'},
                         options: {readOnly: !this.state.editing, minimap: {enabled: false}},

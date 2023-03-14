@@ -19,8 +19,7 @@ import (
 
 // make sure we can echo back the Git creds
 func TestCustomToolWithGitCreds(t *testing.T) {
-	ctx := Given(t)
-	ctx.
+	Given(t).
 		// path does not matter, we ignore it
 		ConfigManagementPlugin(
 			ConfigManagementPlugin{
@@ -44,7 +43,7 @@ func TestCustomToolWithGitCreds(t *testing.T) {
 		Expect(SyncStatusIs(SyncStatusCodeSynced)).
 		Expect(HealthIs(health.HealthStatusHealthy)).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.GitAskpass}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.GitAskpass}")
 			assert.NoError(t, err)
 			assert.Equal(t, "argocd", output)
 		})
@@ -52,8 +51,7 @@ func TestCustomToolWithGitCreds(t *testing.T) {
 
 // make sure we can echo back the Git creds
 func TestCustomToolWithGitCredsTemplate(t *testing.T) {
-	ctx := Given(t)
-	ctx.
+	Given(t).
 		// path does not matter, we ignore it
 		ConfigManagementPlugin(
 			ConfigManagementPlugin{
@@ -79,17 +77,17 @@ func TestCustomToolWithGitCredsTemplate(t *testing.T) {
 		Expect(SyncStatusIs(SyncStatusCodeSynced)).
 		Expect(HealthIs(health.HealthStatusHealthy)).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.GitAskpass}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.GitAskpass}")
 			assert.NoError(t, err)
 			assert.Equal(t, "argocd", output)
 		}).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.GitUsername}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.GitUsername}")
 			assert.NoError(t, err)
 			assert.Empty(t, output)
 		}).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.GitPassword}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.GitPassword}")
 			assert.NoError(t, err)
 			assert.Empty(t, output)
 		})
@@ -97,8 +95,7 @@ func TestCustomToolWithGitCredsTemplate(t *testing.T) {
 
 // make sure we can echo back the env
 func TestCustomToolWithEnv(t *testing.T) {
-	ctx := Given(t)
-	ctx.
+	Given(t).
 		// path does not matter, we ignore it
 		ConfigManagementPlugin(
 			ConfigManagementPlugin{
@@ -113,7 +110,7 @@ func TestCustomToolWithEnv(t *testing.T) {
 		Path("guestbook").
 		When().
 		CreateFromFile(func(app *Application) {
-			app.Spec.GetSource().Plugin.Env = Env{{
+			app.Spec.Source.Plugin.Env = Env{{
 				Name:  "FOO",
 				Value: "bar",
 			}}
@@ -127,18 +124,18 @@ func TestCustomToolWithEnv(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.Bar}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.Bar}")
 			assert.NoError(t, err)
 			assert.Equal(t, "baz", output)
 		}).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.Foo}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.Foo}")
 			assert.NoError(t, err)
 			assert.Equal(t, "bar", output)
 		}).
 		And(func(app *Application) {
 			expectedKubeVersion := GetVersions().ServerVersion.Format("%s.%s")
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.KubeVersion}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.KubeVersion}")
 			assert.NoError(t, err)
 			assert.Equal(t, expectedKubeVersion, output)
 		}).
@@ -147,7 +144,7 @@ func TestCustomToolWithEnv(t *testing.T) {
 			expectedApiVersionSlice := strings.Split(expectedApiVersion, ",")
 			sort.Strings(expectedApiVersionSlice)
 
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.KubeApiVersion}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.KubeApiVersion}")
 			assert.NoError(t, err)
 			outputSlice := strings.Split(output, ",")
 			sort.Strings(outputSlice)
@@ -158,8 +155,7 @@ func TestCustomToolWithEnv(t *testing.T) {
 
 //make sure we can sync and diff with --local
 func TestCustomToolSyncAndDiffLocal(t *testing.T) {
-	ctx := Given(t)
-	ctx.
+	Given(t).
 		// path does not matter, we ignore it
 		ConfigManagementPlugin(
 			ConfigManagementPlugin{
@@ -173,7 +169,7 @@ func TestCustomToolSyncAndDiffLocal(t *testing.T) {
 		// does not matter what the path is
 		Path("guestbook").
 		When().
-		CreateApp("--config-management-plugin", ctx.AppName()).
+		CreateApp("--config-management-plugin", Name()).
 		Sync("--local", "testdata/guestbook").
 		Then().
 		Expect(OperationPhaseIs(OperationSucceeded)).
@@ -183,10 +179,10 @@ func TestCustomToolSyncAndDiffLocal(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}).
 		And(func(app *Application) {
-			FailOnErr(RunCli("app", "sync", ctx.AppName(), "--local", "testdata/guestbook"))
+			FailOnErr(RunCli("app", "sync", app.Name, "--local", "testdata/guestbook"))
 		}).
 		And(func(app *Application) {
-			FailOnErr(RunCli("app", "diff", ctx.AppName(), "--local", "testdata/guestbook"))
+			FailOnErr(RunCli("app", "diff", app.Name, "--local", "testdata/guestbook"))
 		})
 }
 
@@ -240,32 +236,10 @@ func TestCMPDiscoverWithFindGlob(t *testing.T) {
 		Expect(HealthIs(health.HealthStatusHealthy))
 }
 
-//Discover by Plugin Name
-func TestCMPDiscoverWithPluginName(t *testing.T) {
-	Given(t).
-		And(func() {
-			go startCMPServer("./testdata/cmp-find-glob")
-			time.Sleep(1 * time.Second)
-			os.Setenv("ARGOCD_BINARY_NAME", "argocd")
-		}).
-		Path("guestbook").
-		When().
-		CreateFromFile(func(app *Application) {
-			// specifically mention the plugin to use (name is based on <plugin name>-<version>
-			app.Spec.Source.Plugin = &ApplicationSourcePlugin{Name: "cmp-find-glob-v1.0"}
-		}).
-		Sync().
-		Then().
-		Expect(OperationPhaseIs(OperationSucceeded)).
-		Expect(SyncStatusIs(SyncStatusCodeSynced)).
-		Expect(HealthIs(health.HealthStatusHealthy))
-}
-
 //Discover by Find command
 func TestCMPDiscoverWithFindCommandWithEnv(t *testing.T) {
 	pluginName := "cmp-find-command"
-	ctx := Given(t)
-	ctx.
+	Given(t).
 		And(func() {
 			go startCMPServer("./testdata/cmp-find-command")
 			time.Sleep(1 * time.Second)
@@ -283,13 +257,13 @@ func TestCMPDiscoverWithFindCommandWithEnv(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}).
 		And(func(app *Application) {
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.Bar}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.Bar}")
 			assert.NoError(t, err)
 			assert.Equal(t, "baz", output)
 		}).
 		And(func(app *Application) {
 			expectedKubeVersion := GetVersions().ServerVersion.Format("%s.%s")
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.KubeVersion}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.KubeVersion}")
 			assert.NoError(t, err)
 			assert.Equal(t, expectedKubeVersion, output)
 		}).
@@ -298,7 +272,7 @@ func TestCMPDiscoverWithFindCommandWithEnv(t *testing.T) {
 			expectedApiVersionSlice := strings.Split(expectedApiVersion, ",")
 			sort.Strings(expectedApiVersionSlice)
 
-			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", ctx.AppName(), "-o", "jsonpath={.metadata.annotations.KubeApiVersion}")
+			output, err := Run("", "kubectl", "-n", DeploymentNamespace(), "get", "cm", Name(), "-o", "jsonpath={.metadata.annotations.KubeApiVersion}")
 			assert.NoError(t, err)
 			outputSlice := strings.Split(output, ",")
 			sort.Strings(outputSlice)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"net/http"
 	pathpkg "path"
 
 	gitlab "github.com/xanzy/go-gitlab"
@@ -145,11 +144,7 @@ func (g *GitlabProvider) listBranches(_ context.Context, repo *Repository) ([]gi
 	branches := []gitlab.Branch{}
 	// If we don't specifically want to query for all branches, just use the default branch and call it a day.
 	if !g.allBranches {
-		gitlabBranch, resp, err := g.client.Branches.GetBranch(repo.RepositoryId, repo.Branch, nil)
-		// 404s are not an error here, just a normal false.
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return []gitlab.Branch{}, nil
-		}
+		gitlabBranch, _, err := g.client.Branches.GetBranch(repo.RepositoryId, repo.Branch, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -162,10 +157,6 @@ func (g *GitlabProvider) listBranches(_ context.Context, repo *Repository) ([]gi
 	}
 	for {
 		gitlabBranches, resp, err := g.client.Branches.ListBranches(repo.RepositoryId, opt)
-		// 404s are not an error here, just a normal false.
-		if resp != nil && resp.StatusCode == http.StatusNotFound {
-			return []gitlab.Branch{}, nil
-		}
 		if err != nil {
 			return nil, err
 		}
