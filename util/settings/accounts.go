@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/util/retry"
 
 	"github.com/argoproj/argo-cd/v2/common"
 )
@@ -106,7 +105,7 @@ func (mgr *SettingsManager) saveAccount(name string, account Account) error {
 func (mgr *SettingsManager) AddAccount(name string, account Account) error {
 	accounts, err := mgr.GetAccounts()
 	if err != nil {
-		return fmt.Errorf("error getting accounts: %w", err)
+		return err
 	}
 	if _, ok := accounts[name]; ok {
 		return status.Errorf(codes.AlreadyExists, "account '%s' already exists", name)
@@ -128,19 +127,17 @@ func (mgr *SettingsManager) GetAccount(name string) (*Account, error) {
 }
 
 // UpdateAccount runs the callback function against an account that matches to the specified name
-// and persist changes applied by the callback.
+//and persist changes applied by the callback.
 func (mgr *SettingsManager) UpdateAccount(name string, callback func(account *Account) error) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		account, err := mgr.GetAccount(name)
-		if err != nil {
-			return err
-		}
-		err = callback(account)
-		if err != nil {
-			return err
-		}
-		return mgr.saveAccount(name, *account)
-	})
+	account, err := mgr.GetAccount(name)
+	if err != nil {
+		return err
+	}
+	err = callback(account)
+	if err != nil {
+		return err
+	}
+	return mgr.saveAccount(name, *account)
 }
 
 // GetAccounts returns list of configured accounts

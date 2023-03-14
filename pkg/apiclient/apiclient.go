@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net"
 	"net/http"
@@ -15,14 +16,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/coreos/go-oidc"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/golang/protobuf/ptypes/empty"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	log "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,11 +34,9 @@ import (
 	"github.com/argoproj/argo-cd/v2/common"
 	accountpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/account"
 	applicationpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/application"
-	applicationsetpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/applicationset"
 	certificatepkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/certificate"
 	clusterpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/cluster"
 	gpgkeypkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/gpgkey"
-	notificationpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/notification"
 	projectpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/project"
 	repocredspkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/repocreds"
 	repositorypkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/repository"
@@ -47,7 +45,6 @@ import (
 	versionpkg "github.com/argoproj/argo-cd/v2/pkg/apiclient/version"
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	argoappv1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	"github.com/argoproj/argo-cd/v2/util/argo"
 	"github.com/argoproj/argo-cd/v2/util/env"
 	grpc_util "github.com/argoproj/argo-cd/v2/util/grpc"
 	http_util "github.com/argoproj/argo-cd/v2/util/http"
@@ -89,11 +86,7 @@ type Client interface {
 	NewGPGKeyClient() (io.Closer, gpgkeypkg.GPGKeyServiceClient, error)
 	NewGPGKeyClientOrDie() (io.Closer, gpgkeypkg.GPGKeyServiceClient)
 	NewApplicationClient() (io.Closer, applicationpkg.ApplicationServiceClient, error)
-	NewApplicationSetClient() (io.Closer, applicationsetpkg.ApplicationSetServiceClient, error)
 	NewApplicationClientOrDie() (io.Closer, applicationpkg.ApplicationServiceClient)
-	NewApplicationSetClientOrDie() (io.Closer, applicationsetpkg.ApplicationSetServiceClient)
-	NewNotificationClient() (io.Closer, notificationpkg.NotificationServiceClient, error)
-	NewNotificationClientOrDie() (io.Closer, notificationpkg.NotificationServiceClient)
 	NewSessionClient() (io.Closer, sessionpkg.SessionServiceClient, error)
 	NewSessionClientOrDie() (io.Closer, sessionpkg.SessionServiceClient)
 	NewSettingsClient() (io.Closer, settingspkg.SettingsServiceClient, error)
@@ -233,11 +226,11 @@ func NewClient(opts *ClientOptions) (Client, error) {
 		c.AuthToken = authFromEnv
 	}
 	if opts.AuthToken != "" {
-		c.AuthToken = strings.TrimSpace(opts.AuthToken)
+		c.AuthToken = opts.AuthToken
 	}
 	// Override certificate data if specified from CLI flag
 	if opts.CertFile != "" {
-		b, err := os.ReadFile(opts.CertFile)
+		b, err := ioutil.ReadFile(opts.CertFile)
 		if err != nil {
 			return nil, err
 		}
@@ -524,8 +517,6 @@ func (c *client) newConn() (*grpc.ClientConn, io.Closer, error) {
 	dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxGRPCMessageSize), grpc.MaxCallSendMsgSize(MaxGRPCMessageSize)))
 	dialOpts = append(dialOpts, grpc.WithStreamInterceptor(grpc_retry.StreamClientInterceptor(retryOpts...)))
 	dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(grpc_retry.UnaryClientInterceptor(retryOpts...))))
-	dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()))
-	dialOpts = append(dialOpts, grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()))
 
 	ctx := context.Background()
 
@@ -677,42 +668,8 @@ func (c *client) NewApplicationClient() (io.Closer, applicationpkg.ApplicationSe
 	return closer, appIf, nil
 }
 
-func (c *client) NewApplicationSetClient() (io.Closer, applicationsetpkg.ApplicationSetServiceClient, error) {
-	conn, closer, err := c.newConn()
-	if err != nil {
-		return nil, nil, err
-	}
-	appIf := applicationsetpkg.NewApplicationSetServiceClient(conn)
-	return closer, appIf, nil
-}
-
 func (c *client) NewApplicationClientOrDie() (io.Closer, applicationpkg.ApplicationServiceClient) {
-	conn, appIf, err := c.NewApplicationClient()
-	if err != nil {
-		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-	}
-	return conn, appIf
-}
-
-func (c *client) NewNotificationClient() (io.Closer, notificationpkg.NotificationServiceClient, error) {
-	conn, closer, err := c.newConn()
-	if err != nil {
-		return nil, nil, err
-	}
-	notifIf := notificationpkg.NewNotificationServiceClient(conn)
-	return closer, notifIf, nil
-}
-
-func (c *client) NewNotificationClientOrDie() (io.Closer, notificationpkg.NotificationServiceClient) {
-	conn, notifIf, err := c.NewNotificationClient()
-	if err != nil {
-		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
-	}
-	return conn, notifIf
-}
-
-func (c *client) NewApplicationSetClientOrDie() (io.Closer, applicationsetpkg.ApplicationSetServiceClient) {
-	conn, repoIf, err := c.NewApplicationSetClient()
+	conn, repoIf, err := c.NewApplicationClient()
 	if err != nil {
 		log.Fatalf("Failed to establish connection to %s: %v", c.ServerAddr, err)
 	}
@@ -809,18 +766,13 @@ func (c *client) NewAccountClientOrDie() (io.Closer, accountpkg.AccountServiceCl
 func (c *client) WatchApplicationWithRetry(ctx context.Context, appName string, revision string) chan *argoappv1.ApplicationWatchEvent {
 	appEventsCh := make(chan *argoappv1.ApplicationWatchEvent)
 	cancelled := false
-	appName, appNs := argo.ParseAppQualifiedName(appName, "")
 	go func() {
 		defer close(appEventsCh)
 		for !cancelled {
 			conn, appIf, err := c.NewApplicationClient()
 			if err == nil {
 				var wc applicationpkg.ApplicationService_WatchClient
-				wc, err = appIf.Watch(ctx, &applicationpkg.ApplicationQuery{
-					Name:            &appName,
-					AppNamespace:    &appNs,
-					ResourceVersion: &revision,
-				})
+				wc, err = appIf.Watch(ctx, &applicationpkg.ApplicationQuery{Name: &appName, ResourceVersion: &revision})
 				if err == nil {
 					for {
 						var appEvent *v1alpha1.ApplicationWatchEvent
@@ -863,12 +815,11 @@ func isCanceledContextErr(err error) bool {
 func parseHeaders(headerStrings []string) (http.Header, error) {
 	headers := http.Header{}
 	for _, kv := range headerStrings {
-		i := strings.IndexByte(kv, ':')
-		// zero means meaningless empty header name
-		if i <= 0 {
+		items := strings.Split(kv, ":")
+		if len(items)%2 == 1 {
 			return nil, fmt.Errorf("additional headers must be colon(:)-separated: %s", kv)
 		}
-		headers.Add(kv[0:i], kv[i+1:])
+		headers.Add(items[0], items[1])
 	}
 	return headers, nil
 }

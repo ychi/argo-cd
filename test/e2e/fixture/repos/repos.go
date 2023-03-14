@@ -2,6 +2,7 @@ package repos
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -154,7 +155,7 @@ func AddSSHCredentials() {
 // PushChartToOCIRegistry adds a helm chart to helm OCI registry
 func PushChartToOCIRegistry(chartPathName, chartName, chartVersion string) {
 	// create empty temp directory to extract chart from the registry
-	tempDest, err1 := os.MkdirTemp("", "helm")
+	tempDest, err1 := ioutil.TempDir("", "helm")
 	errors.CheckError(err1)
 	defer func() { _ = os.RemoveAll(tempDest) }()
 

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -14,7 +15,7 @@ import (
 func TestLogout(t *testing.T) {
 
 	// Write the test config file
-	err := os.WriteFile(testConfigFilePath, []byte(testConfig), os.ModePerm)
+	err := ioutil.WriteFile(testConfigFilePath, []byte(testConfig), os.ModePerm)
 	assert.NoError(t, err)
 	defer os.Remove(testConfigFilePath)
 
