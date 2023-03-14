@@ -249,8 +249,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -408,8 +406,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -728,8 +724,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -887,8 +881,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -1211,8 +1203,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -1370,8 +1360,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -1668,8 +1656,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -1827,8 +1813,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -2155,8 +2139,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -2314,8 +2296,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -2634,8 +2614,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -2793,8 +2771,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -3117,8 +3093,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -3276,8 +3250,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -3574,8 +3546,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -3733,8 +3703,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -4149,8 +4117,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -4308,8 +4274,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -4771,8 +4735,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -4930,8 +4892,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -5244,8 +5204,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -5403,8 +5361,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -5731,8 +5687,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -5890,8 +5844,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -6210,8 +6162,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -6369,8 +6319,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -6693,8 +6641,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -6852,8 +6798,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -7150,8 +7094,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -7309,8 +7251,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -7725,8 +7665,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -7884,8 +7822,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -8347,8 +8283,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -8506,8 +8440,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -8824,8 +8756,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -8983,8 +8913,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -9396,8 +9324,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -9555,8 +9481,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -10018,8 +9942,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -10178,8 +10100,6 @@ spec:
                                             type: string
                                           nameSuffix:
                                             type: string
-                                          namespace:
-                                            type: string
                                           version:
                                             type: string
                                         type: object
@@ -10308,13 +10228,6 @@ spec:
                 type: array
               goTemplate:
                 type: boolean
-              preservedFields:
-                properties:
-                  annotations:
-                    items:
-                      type: string
-                    type: array
-                type: object
               strategy:
                 properties:
                   rollingSync:
@@ -10536,8 +10449,6 @@ spec:
                                 type: string
                               nameSuffix:
                                 type: string
-                              namespace:
-                                type: string
                               version:
                                 type: string
                             type: object
@@ -10695,8 +10606,6 @@ spec:
                                 namePrefix:
                                   type: string
                                 nameSuffix:
-                                  type: string
-                                namespace:
                                   type: string
                                 version:
                                   type: string

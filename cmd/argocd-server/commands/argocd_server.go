@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/argoproj/pkg/stats"
-	"github.com/redis/go-redis/v9"
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
