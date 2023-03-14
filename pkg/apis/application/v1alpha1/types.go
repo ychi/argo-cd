@@ -33,7 +33,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 
-	"github.com/argoproj/argo-cd/v2/common"
 	"github.com/argoproj/argo-cd/v2/util/collections"
 	"github.com/argoproj/argo-cd/v2/util/helm"
 	"github.com/argoproj/argo-cd/v2/util/security"
@@ -445,8 +444,6 @@ type ApplicationSourceKustomize struct {
 	ForceCommonLabels bool `json:"forceCommonLabels,omitempty" protobuf:"bytes,7,opt,name=forceCommonLabels"`
 	// ForceCommonAnnotations specifies whether to force applying common annotations to resources for Kustomize apps
 	ForceCommonAnnotations bool `json:"forceCommonAnnotations,omitempty" protobuf:"bytes,8,opt,name=forceCommonAnnotations"`
-	// Namespace sets the namespace that Kustomize adds to all resources
-	Namespace string `json:"namespace,omitempty" protobuf:"bytes,9,opt,name=namespace"`
 }
 
 // AllowsConcurrentProcessing returns true if multiple processes can run Kustomize builds on the same source at the same time
@@ -454,7 +451,6 @@ func (k *ApplicationSourceKustomize) AllowsConcurrentProcessing() bool {
 	return len(k.Images) == 0 &&
 		len(k.CommonLabels) == 0 &&
 		k.NamePrefix == "" &&
-		k.Namespace == "" &&
 		k.NameSuffix == ""
 }
 
@@ -464,7 +460,6 @@ func (k *ApplicationSourceKustomize) IsZero() bool {
 		k.NamePrefix == "" &&
 			k.NameSuffix == "" &&
 			k.Version == "" &&
-			k.Namespace == "" &&
 			len(k.Images) == 0 &&
 			len(k.CommonLabels) == 0 &&
 			len(k.CommonAnnotations) == 0
@@ -710,8 +705,6 @@ type SyncOperationResource struct {
 	Kind      string `json:"kind" protobuf:"bytes,2,opt,name=kind"`
 	Name      string `json:"name" protobuf:"bytes,3,opt,name=name"`
 	Namespace string `json:"namespace,omitempty" protobuf:"bytes,4,opt,name=namespace"`
-	// nolint:govet
-	Exclude bool `json:"-"`
 }
 
 // RevisionHistories is a array of history, oldest first and newest last
@@ -734,17 +727,6 @@ func (in RevisionHistories) Trunc(n int) RevisionHistories {
 // HasIdentity determines whether a sync operation is identified by a manifest
 func (r SyncOperationResource) HasIdentity(name string, namespace string, gvk schema.GroupVersionKind) bool {
 	if name == r.Name && gvk.Kind == r.Kind && gvk.Group == r.Group && (r.Namespace == "" || namespace == r.Namespace) {
-		return true
-	}
-	return false
-}
-
-// Compare determines whether an app resource matches the resource filter during sync or wait.
-func (r SyncOperationResource) Compare(name string, namespace string, gvk schema.GroupVersionKind) bool {
-	if (r.Group == "*" || gvk.Group == r.Group) &&
-		(r.Kind == "*" || gvk.Kind == r.Kind) &&
-		(r.Name == "*" || name == r.Name) &&
-		(r.Namespace == "*" || r.Namespace == "" || namespace == r.Namespace) {
 		return true
 	}
 	return false
@@ -1265,7 +1247,7 @@ func (t *ApplicationTree) FindNode(group string, kind string, namespace string, 
 }
 
 // TODO: Document purpose of this method
-func (t *ApplicationTree) GetSummary(app *Application) ApplicationSummary {
+func (t *ApplicationTree) GetSummary() ApplicationSummary {
 	urlsSet := make(map[string]bool)
 	imagesSet := make(map[string]bool)
 	for _, node := range t.Nodes {
@@ -1276,12 +1258,6 @@ func (t *ApplicationTree) GetSummary(app *Application) ApplicationSummary {
 		}
 		for _, image := range node.Images {
 			imagesSet[image] = true
-		}
-	}
-	// also add Application's own links
-	for k, v := range app.GetAnnotations() {
-		if strings.HasPrefix(k, common.AnnotationKeyLinkPrefix) {
-			urlsSet[v] = true
 		}
 	}
 	urls := make([]string, 0)
