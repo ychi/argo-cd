@@ -12,9 +12,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 ---
 apiVersion: v1
@@ -105,9 +105,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 rules:
 - apiGroups:
@@ -291,9 +291,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -446,9 +446,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 spec:
   ports:
@@ -599,9 +599,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 spec:
   selector:
@@ -613,8 +613,9 @@ spec:
         app.kubernetes.io/name: argocd-applicationset-controller
     spec:
       containers:
-      - args:
-        - /usr/local/bin/argocd-applicationset-controller
+      - command:
+        - entrypoint.sh
+        - argocd-applicationset-controller
         env:
         - name: NAMESPACE
           valueFrom:
@@ -680,7 +681,7 @@ spec:
               key: applicationsetcontroller.enable.progressive.syncs
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         name: argocd-applicationset-controller
         ports:
@@ -786,11 +787,11 @@ spec:
           name: argocd-dex-server-tls
       initContainers:
       - command:
-        - /bin/cp
+        - cp
         - -n
         - /usr/local/bin/argocd
         - /shared/argocd-dex
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         name: copyutil
         securityContext:
@@ -841,9 +842,9 @@ spec:
         app.kubernetes.io/name: argocd-notifications-controller
     spec:
       containers:
-      - args:
-        - /usr/local/bin/argocd-notifications
-        image: quay.io/argoproj/argocd:latest
+      - command:
+        - argocd-notifications
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         livenessProbe:
           tcpSocket:
@@ -971,10 +972,10 @@ spec:
             weight: 5
       automountServiceAccountToken: false
       containers:
-      - args:
-        - /usr/local/bin/argocd-repo-server
-        - --redis
-        - argocd-redis:6379
+      - command:
+        - sh
+        - -c
+        - entrypoint.sh argocd-repo-server --redis argocd-redis:6379
         env:
         - name: ARGOCD_RECONCILIATION_TIMEOUT
           valueFrom:
@@ -1102,7 +1103,7 @@ spec:
           value: /helm-working-dir
         - name: HELM_DATA_HOME
           value: /helm-working-dir
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -1150,11 +1151,11 @@ spec:
           name: plugins
       initContainers:
       - command:
-        - /bin/cp
+        - cp
         - -n
         - /usr/local/bin/argocd
         - /var/run/argocd/argocd-cmp-server
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         name: copyutil
         securityContext:
           allowPrivilegeEscalation: false
@@ -1234,8 +1235,8 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 5
       containers:
-      - args:
-        - /usr/local/bin/argocd-server
+      - command:
+        - argocd-server
         env:
         - name: ARGOCD_SERVER_INSECURE
           valueFrom:
@@ -1429,7 +1430,7 @@ spec:
               key: server.enable.proxy.extension
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -1538,8 +1539,8 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 5
       containers:
-      - args:
-        - /usr/local/bin/argocd-application-controller
+      - command:
+        - argocd-application-controller
         env:
         - name: ARGOCD_CONTROLLER_REPLICAS
           value: "1"
@@ -1663,7 +1664,7 @@ spec:
               key: application.namespaces
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         name: argocd-application-controller
         ports:
