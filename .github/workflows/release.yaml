@@ -12,7 +12,7 @@ on:
       - "!release-v0*"
 
 env:
-  GOLANG_VERSION: '1.19'
+  GOLANG_VERSION: '1.18'
 
 permissions:
   contents: read
@@ -205,7 +205,7 @@ jobs:
         if: ${{ env.DRY_RUN != 'true' }}
 
       - uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # v2.1.0
-      - uses: docker/setup-buildx-action@4b4e9c3e2d4531116a6f8ba8e71fc6e2cb6e6c8c # v2.5.0
+      - uses: docker/setup-buildx-action@f03ac48505955848960e80bbb68046aa35c7b9e7 # v2.4.1
       - name: Build and push Docker image for release
         run: |
           set -ue
@@ -324,7 +324,7 @@ jobs:
       - name: Update homebrew formula
         env:
           HOMEBREW_TOKEN: ${{ secrets.RELEASE_HOMEBREW_TOKEN }}
-        uses: dawidd6/action-homebrew-bump-formula@e9b43cd30eec6ea80777e7e22e1526beb1675c18 # v3.9.0
+        uses: dawidd6/action-homebrew-bump-formula@02e79d9da43d79efa846d73695b6052cbbdbf48a # v3.8.3
         with:
           token: ${{env.HOMEBREW_TOKEN}}
           formula: argocd

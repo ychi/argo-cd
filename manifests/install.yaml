@@ -334,10 +334,6 @@ spec:
                             description: NameSuffix is a suffix appended to resources
                               for Kustomize apps
                             type: string
-                          namespace:
-                            description: Namespace sets the namespace that Kustomize
-                              adds to all resources
-                            type: string
                           version:
                             description: Version controls which version of Kustomize
                               to use for rendering manifests
@@ -600,10 +596,6 @@ spec:
                             nameSuffix:
                               description: NameSuffix is a suffix appended to resources
                                 for Kustomize apps
-                              type: string
-                            namespace:
-                              description: Namespace sets the namespace that Kustomize
-                                adds to all resources
                               type: string
                             version:
                               description: Version controls which version of Kustomize
@@ -981,10 +973,6 @@ spec:
                         description: NameSuffix is a suffix appended to resources
                           for Kustomize apps
                         type: string
-                      namespace:
-                        description: Namespace sets the namespace that Kustomize adds
-                          to all resources
-                        type: string
                       version:
                         description: Version controls which version of Kustomize to
                           use for rendering manifests
@@ -1238,10 +1226,6 @@ spec:
                         nameSuffix:
                           description: NameSuffix is a suffix appended to resources
                             for Kustomize apps
-                          type: string
-                        namespace:
-                          description: Namespace sets the namespace that Kustomize
-                            adds to all resources
                           type: string
                         version:
                           description: Version controls which version of Kustomize
@@ -1645,10 +1629,6 @@ spec:
                               description: NameSuffix is a suffix appended to resources
                                 for Kustomize apps
                               type: string
-                            namespace:
-                              description: Namespace sets the namespace that Kustomize
-                                adds to all resources
-                              type: string
                             version:
                               description: Version controls which version of Kustomize
                                 to use for rendering manifests
@@ -1913,10 +1893,6 @@ spec:
                               nameSuffix:
                                 description: NameSuffix is a suffix appended to resources
                                   for Kustomize apps
-                                type: string
-                              namespace:
-                                description: Namespace sets the namespace that Kustomize
-                                  adds to all resources
                                 type: string
                               version:
                                 description: Version controls which version of Kustomize
@@ -2328,10 +2304,6 @@ spec:
                                     description: NameSuffix is a suffix appended to
                                       resources for Kustomize apps
                                     type: string
-                                  namespace:
-                                    description: Namespace sets the namespace that
-                                      Kustomize adds to all resources
-                                    type: string
                                   version:
                                     description: Version controls which version of
                                       Kustomize to use for rendering manifests
@@ -2614,10 +2586,6 @@ spec:
                                     nameSuffix:
                                       description: NameSuffix is a suffix appended
                                         to resources for Kustomize apps
-                                      type: string
-                                    namespace:
-                                      description: Namespace sets the namespace that
-                                        Kustomize adds to all resources
                                       type: string
                                     version:
                                       description: Version controls which version
@@ -3002,10 +2970,6 @@ spec:
                                 description: NameSuffix is a suffix appended to resources
                                   for Kustomize apps
                                 type: string
-                              namespace:
-                                description: Namespace sets the namespace that Kustomize
-                                  adds to all resources
-                                type: string
                               version:
                                 description: Version controls which version of Kustomize
                                   to use for rendering manifests
@@ -3281,10 +3245,6 @@ spec:
                                 nameSuffix:
                                   description: NameSuffix is a suffix appended to
                                     resources for Kustomize apps
-                                  type: string
-                                namespace:
-                                  description: Namespace sets the namespace that Kustomize
-                                    adds to all resources
                                   type: string
                                 version:
                                   description: Version controls which version of Kustomize
@@ -3667,10 +3627,6 @@ spec:
                                 description: NameSuffix is a suffix appended to resources
                                   for Kustomize apps
                                 type: string
-                              namespace:
-                                description: Namespace sets the namespace that Kustomize
-                                  adds to all resources
-                                type: string
                               version:
                                 description: Version controls which version of Kustomize
                                   to use for rendering manifests
@@ -3946,10 +3902,6 @@ spec:
                                 nameSuffix:
                                   description: NameSuffix is a suffix appended to
                                     resources for Kustomize apps
-                                  type: string
-                                namespace:
-                                  description: Namespace sets the namespace that Kustomize
-                                    adds to all resources
                                   type: string
                                 version:
                                   description: Version controls which version of Kustomize
@@ -4311,8 +4263,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -4470,8 +4420,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -4790,8 +4738,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -4949,8 +4895,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -5273,8 +5217,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -5432,8 +5374,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -5730,8 +5670,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -5889,8 +5827,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -6217,8 +6153,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -6376,8 +6310,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -6696,8 +6628,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -6855,8 +6785,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -7179,8 +7107,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -7338,8 +7264,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -7636,8 +7560,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -7795,8 +7717,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -8211,8 +8131,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -8370,8 +8288,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -8833,8 +8749,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -8992,8 +8906,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -9306,8 +9218,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -9465,8 +9375,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -9793,8 +9701,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -9952,8 +9858,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -10272,8 +10176,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -10431,8 +10333,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -10755,8 +10655,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -10914,8 +10812,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -11212,8 +11108,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -11371,8 +11265,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -11787,8 +11679,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -11946,8 +11836,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -12409,8 +12297,6 @@ spec:
                                                     type: string
                                                   nameSuffix:
                                                     type: string
-                                                  namespace:
-                                                    type: string
                                                   version:
                                                     type: string
                                                 type: object
@@ -12568,8 +12454,6 @@ spec:
                                                     namePrefix:
                                                       type: string
                                                     nameSuffix:
-                                                      type: string
-                                                    namespace:
                                                       type: string
                                                     version:
                                                       type: string
@@ -12886,8 +12770,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -13045,8 +12927,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -13458,8 +13338,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -13617,8 +13495,6 @@ spec:
                                           namePrefix:
                                             type: string
                                           nameSuffix:
-                                            type: string
-                                          namespace:
                                             type: string
                                           version:
                                             type: string
@@ -14080,8 +13956,6 @@ spec:
                                           type: string
                                         nameSuffix:
                                           type: string
-                                        namespace:
-                                          type: string
                                         version:
                                           type: string
                                       type: object
@@ -14240,8 +14114,6 @@ spec:
                                             type: string
                                           nameSuffix:
                                             type: string
-                                          namespace:
-                                            type: string
                                           version:
                                             type: string
                                         type: object
@@ -14370,13 +14242,6 @@ spec:
                 type: array
               goTemplate:
                 type: boolean
-              preservedFields:
-                properties:
-                  annotations:
-                    items:
-                      type: string
-                    type: array
-                type: object
               strategy:
                 properties:
                   rollingSync:
@@ -14598,8 +14463,6 @@ spec:
                                 type: string
                               nameSuffix:
                                 type: string
-                              namespace:
-                                type: string
                               version:
                                 type: string
                             type: object
@@ -14757,8 +14620,6 @@ spec:
                                 namePrefix:
                                   type: string
                                 nameSuffix:
-                                  type: string
-                                namespace:
                                   type: string
                                 version:
                                   type: string
@@ -15254,9 +15115,9 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 ---
 apiVersion: v1
@@ -15347,9 +15208,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 rules:
 - apiGroups:
@@ -15431,10 +15292,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  labels:
-    app.kubernetes.io/component: notifications-controller
-    app.kubernetes.io/name: argocd-notifications-controller
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-controller
 rules:
 - apiGroups:
@@ -15596,9 +15453,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -15627,10 +15484,6 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  labels:
-    app.kubernetes.io/component: notifications-controller
-    app.kubernetes.io/name: argocd-notifications-controller
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -15733,10 +15586,6 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  labels:
-    app.kubernetes.io/component: notifications-controller
-    app.kubernetes.io/name: argocd-notifications-controller
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-cm
 ---
 apiVersion: v1
@@ -15777,10 +15626,6 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  labels:
-    app.kubernetes.io/component: notifications-controller
-    app.kubernetes.io/name: argocd-notifications-controller
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-secret
 type: Opaque
 ---
@@ -15797,9 +15642,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 spec:
   ports:
@@ -15860,9 +15705,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: notifications-controller
     app.kubernetes.io/name: argocd-notifications-controller-metrics
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-controller-metrics
 spec:
   ports:
@@ -15952,9 +15795,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/component: applicationset-controller
+    app.kubernetes.io/component: controller
     app.kubernetes.io/name: argocd-applicationset-controller
-    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/part-of: argocd-applicationset
   name: argocd-applicationset-controller
 spec:
   selector:
@@ -15966,8 +15809,9 @@ spec:
         app.kubernetes.io/name: argocd-applicationset-controller
     spec:
       containers:
-      - args:
-        - /usr/local/bin/argocd-applicationset-controller
+      - command:
+        - entrypoint.sh
+        - argocd-applicationset-controller
         env:
         - name: NAMESPACE
           valueFrom:
@@ -16033,7 +15877,7 @@ spec:
               key: applicationsetcontroller.enable.progressive.syncs
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         name: argocd-applicationset-controller
         ports:
@@ -16139,11 +15983,11 @@ spec:
           name: argocd-dex-server-tls
       initContainers:
       - command:
-        - /bin/cp
+        - cp
         - -n
         - /usr/local/bin/argocd
         - /shared/argocd-dex
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         name: copyutil
         securityContext:
@@ -16181,10 +16025,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/component: notifications-controller
-    app.kubernetes.io/name: argocd-notifications-controller
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-controller
 spec:
   selector:
@@ -16198,9 +16038,9 @@ spec:
         app.kubernetes.io/name: argocd-notifications-controller
     spec:
       containers:
-      - args:
-        - /usr/local/bin/argocd-notifications
-        image: quay.io/argoproj/argocd:latest
+      - command:
+        - argocd-notifications
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         livenessProbe:
           tcpSocket:
@@ -16277,7 +16117,7 @@ spec:
         - ""
         - --appendonly
         - "no"
-        image: redis:7.0.9-alpine
+        image: redis:7.0.8-alpine
         imagePullPolicy: Always
         name: redis
         ports:
@@ -16328,10 +16168,10 @@ spec:
             weight: 5
       automountServiceAccountToken: false
       containers:
-      - args:
-        - /usr/local/bin/argocd-repo-server
-        - --redis
-        - argocd-redis:6379
+      - command:
+        - sh
+        - -c
+        - entrypoint.sh argocd-repo-server --redis argocd-redis:6379
         env:
         - name: ARGOCD_RECONCILIATION_TIMEOUT
           valueFrom:
@@ -16459,7 +16299,7 @@ spec:
           value: /helm-working-dir
         - name: HELM_DATA_HOME
           value: /helm-working-dir
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -16507,11 +16347,11 @@ spec:
           name: plugins
       initContainers:
       - command:
-        - /bin/cp
+        - cp
         - -n
         - /usr/local/bin/argocd
         - /var/run/argocd/argocd-cmp-server
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         name: copyutil
         securityContext:
           allowPrivilegeEscalation: false
@@ -16591,8 +16431,8 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 5
       containers:
-      - args:
-        - /usr/local/bin/argocd-server
+      - command:
+        - argocd-server
         env:
         - name: ARGOCD_SERVER_INSECURE
           valueFrom:
@@ -16786,7 +16626,7 @@ spec:
               key: server.enable.proxy.extension
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -16895,8 +16735,8 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 5
       containers:
-      - args:
-        - /usr/local/bin/argocd-application-controller
+      - command:
+        - argocd-application-controller
         env:
         - name: ARGOCD_CONTROLLER_REPLICAS
           value: "1"
@@ -17020,7 +16860,7 @@ spec:
               key: application.namespaces
               name: argocd-cmd-params-cm
               optional: true
-        image: quay.io/argoproj/argocd:latest
+        image: quay.io/argoproj/argocd:v2.6.5
         imagePullPolicy: Always
         name: argocd-application-controller
         ports:
@@ -17126,10 +16966,6 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  labels:
-    app.kubernetes.io/component: notifications-controller
-    app.kubernetes.io/name: argocd-notifications-controller
-    app.kubernetes.io/part-of: argocd
   name: argocd-notifications-controller-network-policy
 spec:
   ingress:
