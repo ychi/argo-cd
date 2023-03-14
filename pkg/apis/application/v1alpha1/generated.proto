@@ -157,10 +157,6 @@ message ApplicationMatchExpression {
   repeated string values = 3;
 }
 
-message ApplicationPreservedFields {
-  repeated string annotations = 1;
-}
-
 // ApplicationSet is a set of Application resources
 // +genclient
 // +genclient:noStatus
@@ -288,8 +284,6 @@ message ApplicationSetSpec {
   optional ApplicationSetSyncPolicy syncPolicy = 4;
 
   optional ApplicationSetStrategy strategy = 5;
-
-  optional ApplicationPreservedFields preservedFields = 6;
 }
 
 // ApplicationSetStatus defines the observed state of ApplicationSet
@@ -468,9 +462,6 @@ message ApplicationSourceKustomize {
 
   // ForceCommonAnnotations specifies whether to force applying common annotations to resources for Kustomize apps
   optional bool forceCommonAnnotations = 8;
-
-  // Namespace sets the namespace that Kustomize adds to all resources
-  optional string namespace = 9;
 }
 
 // ApplicationSourcePlugin holds options specific to config management plugins
