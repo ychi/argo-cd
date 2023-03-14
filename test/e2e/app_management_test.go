@@ -48,7 +48,6 @@ const (
 	guestbookPathLocal     = "./testdata/guestbook_local"
 	globalWithNoNameSpace  = "global-with-no-namespace"
 	guestbookWithNamespace = "guestbook-with-namespace"
-	appLogsRetryCount      = 5
 )
 
 // This empty test is here only for clarity, to conform to logs rbac tests structure in account. This exact usecase is covered in the TestAppLogs test
@@ -95,7 +94,7 @@ func TestGetLogsDenySwitchOn(t *testing.T) {
 		Then().
 		Expect(HealthIs(health.HealthStatusHealthy)).
 		And(func(app *Application) {
-			_, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
+			_, err := RunCli("app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "permission denied")
 		})
@@ -146,17 +145,17 @@ func TestGetLogsAllowSwitchOn(t *testing.T) {
 		Then().
 		Expect(HealthIs(health.HealthStatusHealthy)).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
 			assert.NoError(t, err)
 			assert.Contains(t, out, "Hi")
 		}).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Pod")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Pod")
 			assert.NoError(t, err)
 			assert.Contains(t, out, "Hi")
 		}).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Service")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Service")
 			assert.NoError(t, err)
 			assert.NotContains(t, out, "Hi")
 		})
@@ -203,17 +202,17 @@ func TestGetLogsAllowSwitchOff(t *testing.T) {
 		Then().
 		Expect(HealthIs(health.HealthStatusHealthy)).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
 			assert.NoError(t, err)
 			assert.Contains(t, out, "Hi")
 		}).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Pod")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Pod")
 			assert.NoError(t, err)
 			assert.Contains(t, out, "Hi")
 		}).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Service")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Service")
 			assert.NoError(t, err)
 			assert.NotContains(t, out, "Hi")
 		})
@@ -1359,8 +1358,8 @@ func TestSyncOptionValidateFalse(t *testing.T) {
 		IgnoreErrors().
 		Sync().
 		Then().
-		// client error. K8s API changed error message w/ 1.25, so for now, we need to check both
-		Expect(ErrorRegex("error validating data|of type int32", "")).
+		// client error
+		Expect(Error("error validating data", "")).
 		When().
 		PatchFile("deployment.yaml", `[{"op": "add", "path": "/metadata/annotations", "value": {"argocd.argoproj.io/sync-options": "Validate=false"}}]`).
 		Sync().
@@ -2008,17 +2007,17 @@ func TestAppLogs(t *testing.T) {
 		Then().
 		Expect(HealthIs(health.HealthStatusHealthy)).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Deployment", "--group", "", "--name", "guestbook-ui")
 			assert.NoError(t, err)
 			assert.Contains(t, out, "Hi")
 		}).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Pod")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Pod")
 			assert.NoError(t, err)
 			assert.Contains(t, out, "Hi")
 		}).
 		And(func(app *Application) {
-			out, err := RunCliWithRetry(appLogsRetryCount, "app", "logs", app.Name, "--kind", "Service")
+			out, err := RunCli("app", "logs", app.Name, "--kind", "Service")
 			assert.NoError(t, err)
 			assert.NotContains(t, out, "Hi")
 		})
