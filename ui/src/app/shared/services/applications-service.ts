@@ -3,7 +3,6 @@ import {Observable} from 'rxjs';
 import {map, repeat, retry} from 'rxjs/operators';
 
 import * as models from '../models';
-import {isValidURL} from '../utils';
 import requests from './requests';
 
 interface QueryOptions {
@@ -227,27 +226,25 @@ export class ApplicationsService {
         resource: {group: string; kind: string; name: string},
         containerName: string
     ): string {
-        const search = this.getLogsQuery({namespace, appNamespace, podName, resource, containerName, follow: false});
+        const search = this.getLogsQuery(namespace, appNamespace, podName, resource, containerName, null, false);
         search.set('download', 'true');
         return `api/v1/applications/${applicationName}/logs?${search.toString()}`;
     }
 
-    public getContainerLogs(query: {
-        applicationName: string;
-        appNamespace: string;
-        namespace: string;
-        podName: string;
-        resource: {group: string; kind: string; name: string};
-        containerName: string;
-        tail?: number;
-        follow?: boolean;
-        sinceSeconds?: number;
-        untilTime?: string;
-        filter?: string;
-        previous?: boolean;
-    }): Observable<models.LogEntry> {
-        const {applicationName} = query;
-        const search = this.getLogsQuery(query);
+    public getContainerLogs(
+        applicationName: string,
+        appNamespace: string,
+        namespace: string,
+        podName: string,
+        resource: {group: string; kind: string; name: string},
+        containerName: string,
+        tail?: number,
+        follow?: boolean,
+        untilTime?: string,
+        filter?: string,
+        previous?: boolean
+    ): Observable<models.LogEntry> {
+        const search = this.getLogsQuery(namespace, appNamespace, podName, resource, containerName, tail, follow, untilTime, filter, previous);
         const entries = requests.loadEventSource(`/applications/${applicationName}/logs?${search.toString()}`).pipe(map(data => JSON.parse(data).result as models.LogEntry));
         let first = true;
         return new Observable(observer => {
@@ -302,11 +299,7 @@ export class ApplicationsService {
                 kind: resource.kind,
                 group: resource.group
             })
-            .then(res => {
-                const actions = (res.body.actions as models.ResourceAction[]) || [];
-                actions.sort((actionA, actionB) => actionA.name.localeCompare(actionB.name));
-                return actions;
-            });
+            .then(res => (res.body.actions as models.ResourceAction[]) || []);
     }
 
     public runResourceAction(name: string, appNamespace: string, resource: models.ResourceNode, action: string): Promise<models.ResourceAction[]> {
@@ -396,54 +389,18 @@ export class ApplicationsService {
             .then(() => true);
     }
 
-    public getLinks(applicationName: string): Promise<models.LinksResponse> {
-        return requests
-            .get(`/applications/${applicationName}/links`)
-            .send()
-            .then(res => res.body as models.LinksResponse);
-    }
-
-    public getResourceLinks(applicationName: string, appNamespace: string, resource: models.ResourceNode): Promise<models.LinksResponse> {
-        return requests
-            .get(`/applications/${applicationName}/resource/links`)
-            .query({
-                name: resource.name,
-                appNamespace,
-                namespace: resource.namespace,
-                resourceName: resource.name,
-                version: resource.version,
-                kind: resource.kind,
-                group: resource.group || '' // The group query param must be present even if empty.
-            })
-            .send()
-            .then(res => {
-                const links = res.body as models.LinksResponse;
-                const items: models.LinkInfo[] = [];
-                (links?.items || []).forEach(link => {
-                    if (isValidURL(link.url)) {
-                        items.push(link);
-                    }
-                });
-                links.items = items;
-                return links;
-            });
-    }
-
-    private getLogsQuery(query: {
-        namespace: string;
-        appNamespace: string;
-        podName: string;
-        resource: {group: string; kind: string; name: string};
-        containerName: string;
-        tail?: number;
-        follow?: boolean;
-        sinceSeconds?: number;
-        untilTime?: string;
-        filter?: string;
-        previous?: boolean;
-    }): URLSearchParams {
-        const {appNamespace, containerName, namespace, podName, resource, tail, sinceSeconds, untilTime, filter, previous} = query;
-        let {follow} = query;
+    private getLogsQuery(
+        namespace: string,
+        appNamespace: string,
+        podName: string,
+        resource: {group: string; kind: string; name: string},
+        containerName: string,
+        tail?: number,
+        follow?: boolean,
+        untilTime?: string,
+        filter?: string,
+        previous?: boolean
+    ): URLSearchParams {
         if (follow === undefined || follow === null) {
             follow = true;
         }
@@ -461,9 +418,6 @@ export class ApplicationsService {
         }
         if (tail) {
             search.set('tailLines', tail.toString());
-        }
-        if (sinceSeconds) {
-            search.set('sinceSeconds', sinceSeconds.toString());
         }
         if (untilTime) {
             search.set('untilTime', untilTime);
