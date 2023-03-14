@@ -2,6 +2,7 @@ package cert
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"testing"
@@ -472,11 +473,11 @@ func TestGetSSHKnownHostsDataPath(t *testing.T) {
 func TestGetCertificateForConnect(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		temppath := t.TempDir()
-		cert, err := os.ReadFile("../../test/fixture/certs/argocd-test-server.crt")
+		cert, err := ioutil.ReadFile("../../test/fixture/certs/argocd-test-server.crt")
 		if err != nil {
 			panic(err)
 		}
-		err = os.WriteFile(path.Join(temppath, "127.0.0.1"), cert, 0666)
+		err = ioutil.WriteFile(path.Join(temppath, "127.0.0.1"), cert, 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -496,7 +497,7 @@ func TestGetCertificateForConnect(t *testing.T) {
 
 	t.Run("No valid cert in file", func(t *testing.T) {
 		temppath := t.TempDir()
-		err := os.WriteFile(path.Join(temppath, "127.0.0.1"), []byte("foobar"), 0666)
+		err := ioutil.WriteFile(path.Join(temppath, "127.0.0.1"), []byte("foobar"), 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -512,11 +513,11 @@ func TestGetCertificateForConnect(t *testing.T) {
 func TestGetCertBundlePathForRepository(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		temppath := t.TempDir()
-		cert, err := os.ReadFile("../../test/fixture/certs/argocd-test-server.crt")
+		cert, err := ioutil.ReadFile("../../test/fixture/certs/argocd-test-server.crt")
 		if err != nil {
 			panic(err)
 		}
-		err = os.WriteFile(path.Join(temppath, "127.0.0.1"), cert, 0666)
+		err = ioutil.WriteFile(path.Join(temppath, "127.0.0.1"), cert, 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -536,7 +537,7 @@ func TestGetCertBundlePathForRepository(t *testing.T) {
 
 	t.Run("No valid cert in file", func(t *testing.T) {
 		temppath := t.TempDir()
-		err := os.WriteFile(path.Join(temppath, "127.0.0.1"), []byte("foobar"), 0666)
+		err := ioutil.WriteFile(path.Join(temppath, "127.0.0.1"), []byte("foobar"), 0666)
 		if err != nil {
 			panic(err)
 		}

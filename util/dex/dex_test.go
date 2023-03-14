@@ -152,7 +152,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 
 	t.Run("Empty settings", func(t *testing.T) {
 		s := settings.ArgoCDSettings{}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.Nil(t, config)
 	})
@@ -162,7 +162,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       invalidURL,
 			DexConfig: goodDexConfig,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.Error(t, err)
 		assert.Nil(t, config)
 	})
@@ -172,7 +172,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "",
 			DexConfig: "invalidyaml",
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.Nil(t, config)
 	})
@@ -182,7 +182,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "http://localhost",
 			DexConfig: "invalidyaml",
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.Nil(t, config)
 	})
@@ -192,7 +192,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "http://localhost",
 			DexConfig: malformedDexConfig,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.Error(t, err)
 		assert.Nil(t, config)
 	})
@@ -202,7 +202,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "http://localhost",
 			DexConfig: badDexConfig,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.Error(t, err)
 		assert.Nil(t, config)
 	})
@@ -212,7 +212,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "http://localhost",
 			DexConfig: goodDexConfig,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 	})
@@ -223,7 +223,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			DexConfig: goodDexConfig,
 			Secrets:   goodSecrets,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 		var dexCfg map[string]interface{}
@@ -249,7 +249,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			DexConfig: goodDexConfig,
 			Secrets:   goodSecretswithCRLF,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 		var dexCfg map[string]interface{}
@@ -283,7 +283,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			DexConfig: customStaticClientDexConfig,
 			Secrets:   goodSecretswithCRLF,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 		var dexCfg map[string]interface{}
@@ -305,7 +305,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			DexConfig: customStaticClientDexConfig,
 			Secrets:   goodSecretswithCRLF,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 		var dexCfg map[string]interface{}
@@ -325,7 +325,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "http://localhost",
 			DexConfig: goodDexConfigWithOauthOverrides,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 		var dexCfg map[string]interface{}
@@ -348,7 +348,7 @@ func Test_GenerateDexConfig(t *testing.T) {
 			URL:       "http://localhost",
 			DexConfig: goodDexConfigWithEnabledApprovalScreen,
 		}
-		config, err := GenerateDexConfigYAML(&s, false)
+		config, err := GenerateDexConfigYAML(&s)
 		assert.NoError(t, err)
 		assert.NotNil(t, config)
 		var dexCfg map[string]interface{}
@@ -377,7 +377,7 @@ func Test_DexReverseProxy(t *testing.T) {
 		}))
 		defer fakeDex.Close()
 		fmt.Printf("Fake Dex listening on %s\n", fakeDex.URL)
-		server := httptest.NewServer(http.HandlerFunc(NewDexHTTPReverseProxy(fakeDex.URL, "/", nil)))
+		server := httptest.NewServer(http.HandlerFunc(NewDexHTTPReverseProxy(fakeDex.URL, "/")))
 		fmt.Printf("Fake API Server listening on %s\n", server.URL)
 		defer server.Close()
 		target, _ := url.Parse(fakeDex.URL)
@@ -395,7 +395,7 @@ func Test_DexReverseProxy(t *testing.T) {
 		}))
 		defer fakeDex.Close()
 		fmt.Printf("Fake Dex listening on %s\n", fakeDex.URL)
-		server := httptest.NewServer(http.HandlerFunc(NewDexHTTPReverseProxy(fakeDex.URL, "/", nil)))
+		server := httptest.NewServer(http.HandlerFunc(NewDexHTTPReverseProxy(fakeDex.URL, "/")))
 		fmt.Printf("Fake API Server listening on %s\n", server.URL)
 		defer server.Close()
 		client := &http.Client{
@@ -414,7 +414,7 @@ func Test_DexReverseProxy(t *testing.T) {
 	t.Run("Invalid URL for Dex reverse proxy", func(t *testing.T) {
 		// Can't test for now, since it would call exit
 		t.Skip()
-		f := NewDexHTTPReverseProxy(invalidURL, "/", nil)
+		f := NewDexHTTPReverseProxy(invalidURL, "/")
 		assert.Nil(t, f)
 	})
 
@@ -425,7 +425,7 @@ func Test_DexReverseProxy(t *testing.T) {
 		defer server.Close()
 		rt := NewDexRewriteURLRoundTripper(server.URL, http.DefaultTransport)
 		assert.NotNil(t, rt)
-		req, err := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer([]byte("")))
+		req, err := http.NewRequest("GET", "/", bytes.NewBuffer([]byte("")))
 		assert.NoError(t, err)
 		_, err = rt.RoundTrip(req)
 		assert.NoError(t, err)

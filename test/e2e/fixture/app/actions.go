@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"os"
+	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,7 +66,7 @@ func (a *Actions) AddSignedFile(fileName, fileContents string) *Actions {
 
 func (a *Actions) CreateFromPartialFile(data string, flags ...string) *Actions {
 	a.context.t.Helper()
-	tmpFile, err := os.CreateTemp("", "")
+	tmpFile, err := ioutil.TempFile("", "")
 	errors.CheckError(err)
 	_, err = tmpFile.Write([]byte(data))
 	errors.CheckError(err)
@@ -74,14 +74,11 @@ func (a *Actions) CreateFromPartialFile(data string, flags ...string) *Actions {
 	args := append([]string{
 		"app", "create",
 		"-f", tmpFile.Name(),
-		"--name", a.context.AppName(),
+		"--name", a.context.name,
 		"--repo", fixture.RepoURL(a.context.repoURLType),
 		"--dest-server", a.context.destServer,
 		"--dest-namespace", fixture.DeploymentNamespace(),
 	}, flags...)
-	if a.context.appNamespace != "" {
-		args = append(args, "--app-namespace", a.context.appNamespace)
-	}
 	defer tmpFile.Close()
 	a.runCli(args...)
 	return a
@@ -90,12 +87,11 @@ func (a *Actions) CreateFromFile(handler func(app *Application), flags ...string
 	a.context.t.Helper()
 	app := &Application{
 		ObjectMeta: v1.ObjectMeta{
-			Name:      a.context.AppName(),
-			Namespace: a.context.AppNamespace(),
+			Name: a.context.name,
 		},
 		Spec: ApplicationSpec{
 			Project: a.context.project,
-			Source: &ApplicationSource{
+			Source: ApplicationSource{
 				RepoURL: fixture.RepoURL(a.context.repoURLType),
 				Path:    a.context.path,
 			},
@@ -105,15 +101,14 @@ func (a *Actions) CreateFromFile(handler func(app *Application), flags ...string
 			},
 		},
 	}
-	source := app.Spec.GetSource()
 	if a.context.namePrefix != "" || a.context.nameSuffix != "" {
-		source.Kustomize = &ApplicationSourceKustomize{
+		app.Spec.Source.Kustomize = &ApplicationSourceKustomize{
 			NamePrefix: a.context.namePrefix,
 			NameSuffix: a.context.nameSuffix,
 		}
 	}
 	if a.context.configManagementPlugin != "" {
-		source.Plugin = &ApplicationSourcePlugin{
+		app.Spec.Source.Plugin = &ApplicationSourcePlugin{
 			Name: a.context.configManagementPlugin,
 		}
 	}
@@ -123,50 +118,12 @@ func (a *Actions) CreateFromFile(handler func(app *Application), flags ...string
 	}
 
 	if a.context.directoryRecurse {
-		source.Directory = &ApplicationSourceDirectory{Recurse: true}
+		app.Spec.Source.Directory = &ApplicationSourceDirectory{Recurse: true}
 	}
-	app.Spec.Source = &source
 
 	handler(app)
 	data := grpc.MustMarshal(app)
-	tmpFile, err := os.CreateTemp("", "")
-	errors.CheckError(err)
-	_, err = tmpFile.Write(data)
-	errors.CheckError(err)
-
-	args := append([]string{
-		"app", "create",
-		"-f", tmpFile.Name(),
-	}, flags...)
-	defer tmpFile.Close()
-	a.runCli(args...)
-	return a
-}
-
-func (a *Actions) CreateMultiSourceAppFromFile(flags ...string) *Actions {
-	a.context.t.Helper()
-	app := &Application{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      a.context.AppName(),
-			Namespace: a.context.AppNamespace(),
-		},
-		Spec: ApplicationSpec{
-			Project: a.context.project,
-			Sources: a.context.sources,
-			Destination: ApplicationDestination{
-				Server:    a.context.destServer,
-				Namespace: fixture.DeploymentNamespace(),
-			},
-			SyncPolicy: &SyncPolicy{
-				Automated: &SyncPolicyAutomated{
-					SelfHeal: true,
-				},
-			},
-		},
-	}
-
-	data := grpc.MustMarshal(app)
-	tmpFile, err := os.CreateTemp("", "")
+	tmpFile, err := ioutil.TempFile("", "")
 	errors.CheckError(err)
 	_, err = tmpFile.Write(data)
 	errors.CheckError(err)
@@ -200,7 +157,7 @@ func (a *Actions) CreateApp(args ...string) *Actions {
 func (a *Actions) prepareCreateAppArgs(args []string) []string {
 	a.context.t.Helper()
 	args = append([]string{
-		"app", "create", a.context.AppQualifiedName(),
+		"app", "create", a.context.name,
 		"--repo", fixture.RepoURL(a.context.repoURLType),
 	}, args...)
 
@@ -261,7 +218,7 @@ func (a *Actions) DeclarativeWithCustomRepo(filename string, repoURL string) *Ac
 	values := map[string]interface{}{
 		"ArgoCDNamespace":     fixture.ArgoCDNamespace,
 		"DeploymentNamespace": fixture.DeploymentNamespace(),
-		"Name":                a.context.AppName(),
+		"Name":                a.context.name,
 		"Path":                a.context.path,
 		"Project":             a.context.project,
 		"RepoURL":             repoURL,
@@ -273,13 +230,13 @@ func (a *Actions) DeclarativeWithCustomRepo(filename string, repoURL string) *Ac
 
 func (a *Actions) PatchApp(patch string) *Actions {
 	a.context.t.Helper()
-	a.runCli("app", "patch", a.context.AppQualifiedName(), "--patch", patch)
+	a.runCli("app", "patch", a.context.name, "--patch", patch)
 	return a
 }
 
 func (a *Actions) AppSet(flags ...string) *Actions {
 	a.context.t.Helper()
-	args := []string{"app", "set", a.context.AppQualifiedName()}
+	args := []string{"app", "set", a.context.name}
 	args = append(args, flags...)
 	a.runCli(args...)
 	return a
@@ -287,7 +244,7 @@ func (a *Actions) AppSet(flags ...string) *Actions {
 
 func (a *Actions) AppUnSet(flags ...string) *Actions {
 	a.context.t.Helper()
-	args := []string{"app", "unset", a.context.AppQualifiedName()}
+	args := []string{"app", "unset", a.context.name}
 	args = append(args, flags...)
 	a.runCli(args...)
 	return a
@@ -297,7 +254,7 @@ func (a *Actions) Sync(args ...string) *Actions {
 	a.context.t.Helper()
 	args = append([]string{"app", "sync"}, args...)
 	if a.context.name != "" {
-		args = append(args, a.context.AppQualifiedName())
+		args = append(args, a.context.name)
 	}
 	args = append(args, "--timeout", fmt.Sprintf("%v", a.context.timeout))
 
@@ -310,9 +267,6 @@ func (a *Actions) Sync(args ...string) *Actions {
 	}
 
 	if a.context.resource != "" {
-		// Waiting for the app to be successfully created.
-		// Else the sync would fail to retrieve the app resources.
-		a.context.Sleep(5)
 		args = append(args, "--resource", a.context.resource)
 	}
 
@@ -337,7 +291,7 @@ func (a *Actions) Sync(args ...string) *Actions {
 
 func (a *Actions) TerminateOp() *Actions {
 	a.context.t.Helper()
-	a.runCli("app", "terminate-op", a.context.AppQualifiedName())
+	a.runCli("app", "terminate-op", a.context.name)
 	return a
 }
 
@@ -348,31 +302,14 @@ func (a *Actions) Refresh(refreshType RefreshType) *Actions {
 		RefreshTypeHard:   "--hard-refresh",
 	}[refreshType]
 
-	a.runCli("app", "get", a.context.AppQualifiedName(), flag)
+	a.runCli("app", "get", a.context.name, flag)
 
 	return a
 }
 
 func (a *Actions) Delete(cascade bool) *Actions {
 	a.context.t.Helper()
-	a.runCli("app", "delete", a.context.AppQualifiedName(), fmt.Sprintf("--cascade=%v", cascade), "--yes")
-	return a
-}
-
-func (a *Actions) DeleteBySelector(selector string) *Actions {
-	a.context.t.Helper()
-	a.runCli("app", "delete", fmt.Sprintf("--selector=%s", selector), "--yes")
-	return a
-}
-
-func (a *Actions) Wait(args ...string) *Actions {
-	a.context.t.Helper()
-	args = append([]string{"app", "wait"}, args...)
-	if a.context.name != "" {
-		args = append(args, a.context.AppQualifiedName())
-	}
-	args = append(args, "--timeout", fmt.Sprintf("%v", a.context.timeout))
-	a.runCli(args...)
+	a.runCli("app", "delete", a.context.name, fmt.Sprintf("--cascade=%v", cascade), "--yes")
 	return a
 }
 

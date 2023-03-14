@@ -12,12 +12,11 @@ import (
 
 	"github.com/argoproj/argo-cd/v2/util/argo/managedfields"
 	"github.com/argoproj/argo-cd/v2/util/argo/testdata"
-	"github.com/argoproj/gitops-engine/pkg/utils/kube/scheme"
 )
 
 func TestNormalize(t *testing.T) {
 
-	parser := scheme.StaticParser()
+	parser := managedfields.StaticParser()
 	t.Run("will remove conflicting fields if managed by trusted managers", func(t *testing.T) {
 		// given
 		desiredState := StrToUnstructured(testdata.DesiredDeploymentYaml)
